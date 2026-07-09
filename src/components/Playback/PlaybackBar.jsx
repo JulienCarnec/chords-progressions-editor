@@ -2,6 +2,8 @@ import { useState } from 'react';
 import * as Tone from 'tone';
 import { useAppState } from '../../state/AppContext';
 import { usePlayback } from './usePlayback';
+import { useSampler } from '../../audio/useSampler';
+import { ReverbKnob } from './ReverbKnob';
 import styles from './PlaybackBar.module.css';
 
 const PLAY_STYLES = [
@@ -23,10 +25,12 @@ const NOTE_VALUES = ['1n', '2n', '4n', '8n', '16n'];
 export function PlaybackBar() {
   const { state, dispatch } = useAppState();
   const { play, stop, pause, resume } = usePlayback();
+  const { setReverbWet } = useSampler();
   const [playStyle, setPlayStyle] = useState('block');
   const [noteValue, setNoteValue] = useState('4n');
   const [arpOctaves, setArpOctaves] = useState(1);
   const [humanize, setHumanize] = useState(0);
+  const [reverbPct, setReverbPct] = useState(25); // matches default wet: 0.25
 
   const { isPlaying, isPaused, bpm, timeSig, instrument, metronome, progressions, activeProgressionId } = state;
 
@@ -112,6 +116,12 @@ export function PlaybackBar() {
         />
         <span className={styles.humanizeVal}>{humanize}</span>
       </div>
+
+      {/* Reverb knob */}
+      <ReverbKnob
+        value={reverbPct}
+        onChange={v => { setReverbPct(v); setReverbWet(v / 100); }}
+      />
 
       {/* Metronome */}
       <label className={styles.metLabel}>

@@ -26,6 +26,11 @@ function getReverb() {
   return reverbNode;
 }
 
+/** Set reverb wet level (0–1) immediately. Safe to call before reverb is created. */
+export function setReverbWet(value) {
+  if (reverbNode) reverbNode.wet.value = value;
+}
+
 function makeSynth() {
   return new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: 'triangle' },
@@ -82,5 +87,5 @@ export function useSampler() {
     });
   }, [getSynth]);
 
-  return { playNotes, playArpeggio, getSynth };
+  return { playNotes, playArpeggio, getSynth, setReverbWet };
 }

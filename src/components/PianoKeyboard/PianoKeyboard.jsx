@@ -136,7 +136,9 @@ export function PianoKeyboard({
       if (!chordNoteSet.has(nIdx)) return;
       const invIdx = chordNoteNames.findIndex(n => noteIndex(n) === nIdx);
       if (invIdx !== -1 && onPickInversion) {
-        onPickInversion(invIdx);
+        // Pass both the inversion index and the clicked octave so the caller
+        // can re-voice the chord with this key as the actual bass note.
+        onPickInversion(invIdx, octave);
       }
       setPickingInversion(false);
       return;

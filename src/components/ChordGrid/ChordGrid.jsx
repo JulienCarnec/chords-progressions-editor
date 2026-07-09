@@ -4,7 +4,8 @@ import { ChordCell } from './ChordCell';
 import { ScaleSelector } from '../ScaleSelector/ScaleSelector';
 import { PianoKeyboard } from '../PianoKeyboard/PianoKeyboard';
 import { useSampler } from '../../audio/useSampler';
-import { getChordNotesVoiced } from '../../theory/chords';
+import { getChordNotesVoiced, CHORD_TYPES } from '../../theory/chords';
+import { noteIndex } from '../../theory/notes';
 import styles from './ChordGrid.module.css';
 
 const CELLS_PER_ROW = 8;
@@ -180,16 +181,25 @@ export function ChordGrid() {
           instrument={instrument}
           playbackNotes={pianoPlaybackNotes}
           resetKey={selectedCellIndex}
-          onPickInversion={selectedCellIndex !== null ? (invIdx) => {
+          onPickInversion={selectedCellIndex !== null ? (invIdx, clickedOctave) => {
             const cell = prog.cells[selectedCellIndex];
             if (!cell?.chord) return;
+            // Back-calculate the root's baseOctave from the clicked bass note's octave.
+            // The bass note (intervals[invIdx]) sits at:
+            //   bassOctave = baseOctave + floor((rootIdx + intervals[invIdx]) / 12)
+            // So: baseOctave = clickedOctave - floor((rootIdx + intervals[invIdx]) / 12)
+            const def = CHORD_TYPES[cell.chord.typeKey];
+            const rootIdx = noteIndex(cell.chord.root);
+            const bassInterval = def ? def.intervals[invIdx] ?? 0 : 0;
+            const baseOctave = clickedOctave - Math.floor((rootIdx + bassInterval) / 12);
+            const updated = { ...cell.chord, inversion: invIdx, octave: baseOctave };
             dispatch({
               type: 'SET_CELL_CHORD',
               progressionId: prog.id,
               cellIndex: selectedCellIndex,
-              chord: { ...cell.chord, inversion: invIdx },
+              chord: updated,
             });
-            dispatch({ type: 'SET_SELECTED_CELL_CHORD', chord: { ...cell.chord, inversion: invIdx } });
+            dispatch({ type: 'SET_SELECTED_CELL_CHORD', chord: updated });
           } : undefined}
         />
       </div>

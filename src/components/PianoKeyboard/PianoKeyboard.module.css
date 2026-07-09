@@ -3,17 +3,59 @@
   padding: 8px 0 16px;
 }
 
+/* ─── Controls ────────────────────────────────────────────── */
+
 .controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
 
-.modeLabel { font-size: 12px; color: #6b7280; }
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
-.modeBtn {
+.legendLabel {
+  font-size: 11px;
+  color: #6b7280;
+  margin-right: 4px;
+}
+
+/* The scale entry uses a dot shape in the legend */
+.legendDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  flex-shrink: 0;
+}
+
+/* Chord / manual / playing entries use a small coloured square */
+.legendSwatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.swatchChord   { background: #3b82f6; }
+.swatchManual  { background: #a855f7; }
+.swatchPlaying { background: #f59e0b; }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.actionBtn {
   padding: 3px 10px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
@@ -21,21 +63,18 @@
   font-size: 12px;
   cursor: pointer;
 }
-.modeBtn.active {
-  background: #3b82f6;
-  color: #fff;
-  border-color: #3b82f6;
-}
+.actionBtn:hover { background: #e5e7eb; }
 
-.playBtn {
-  padding: 3px 12px;
-  border: 1px solid #22c55e;
+.clearBtn {
+  padding: 3px 10px;
+  border: 1px solid #fca5a5;
   border-radius: 4px;
-  background: #22c55e;
-  color: #fff;
+  background: #fff;
+  color: #ef4444;
   font-size: 12px;
   cursor: pointer;
 }
+.clearBtn:hover { background: #fef2f2; }
 
 .detectedChord {
   font-size: 13px;
@@ -47,7 +86,6 @@
 
 .keyboard {
   position: relative;
-  /* width and height set inline (responsive) */
 }
 
 /* ─── White keys ──────────────────────────────────────────── */
@@ -55,46 +93,48 @@
 .white {
   position: absolute;
   top: 0;
-  /* width and height set inline */
   border: 1px solid #9ca3af;
   border-radius: 0 0 5px 5px;
   background: #fff;
   cursor: pointer;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
   padding-bottom: 5px;
   box-sizing: border-box;
   z-index: 1;
+  transition: background 0.05s;
 }
-.white:hover { background: #f0f9ff; }
+.white:hover { filter: brightness(0.94); }
 
 .noteName {
   color: #9ca3af;
   pointer-events: none;
+  line-height: 1;
 }
 
 /* ─── Black keys ──────────────────────────────────────────── */
 
-/* Black keys are siblings of white keys, so they paint on top with no clipping */
 .black {
   position: absolute;
   top: 0;
-  /* width and height set inline */
   background: #1f2937;
   border-radius: 0 0 4px 4px;
   cursor: pointer;
   z-index: 2;
   box-sizing: border-box;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
   padding-bottom: 4px;
+  transition: background 0.05s;
 }
-.black:hover { background: #374151; }
+.black:hover { filter: brightness(1.3); }
 
 .blackNoteName {
-  color: #9ca3af;
+  color: rgba(255,255,255,0.45);
   pointer-events: none;
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -102,18 +142,38 @@
   line-height: 1;
 }
 
-/* ─── Highlight states ────────────────────────────────────── */
+/* ─── Scale dots ─────────────────────────────────────────── */
 
-/* White key highlights */
-.hl_scale   { background: #bbf7d0 !important; }
-.hl_chord   { background: #bfdbfe !important; }
-.hl_manual  { background: #e9d5ff !important; }
+/* Dot sits just above the note label on white keys */
+.scaleDot {
+  display: block;
+  border-radius: 50%;
+  background: #16a34a;
+  pointer-events: none;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
 
-/* Black key highlights */
-.hl_scale_b  { background: #16a34a !important; }
-.hl_chord_b  { background: #2563eb !important; }
-.hl_manual_b { background: #7c3aed !important; }
+/* Dot on black keys — lighter so it shows on the dark bg */
+.scaleDotBlack {
+  display: block;
+  border-radius: 50%;
+  background: #4ade80;
+  pointer-events: none;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
 
-/* Playback highlight — bright amber */
-.hl_playing   { background: #f59e0b !important; }
-.hl_playing_b { background: #b45309 !important; }
+/* ─── Background highlight layers ───────────────────────────
+   Priority: playing > manual > chord
+   Applied as a class; scale never sets background.        */
+
+/* White keys */
+.bg_chord   { background: #bfdbfe !important; }
+.bg_manual  { background: #e9d5ff !important; }
+.bg_playing { background: #fde68a !important; }
+
+/* Black keys */
+.bg_chord_b   { background: #1d4ed8 !important; }
+.bg_manual_b  { background: #7c3aed !important; }
+.bg_playing_b { background: #d97706 !important; }

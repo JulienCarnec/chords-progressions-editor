@@ -131,13 +131,9 @@ export function PianoKeyboard({
     e.stopPropagation();
 
     if (pickingInversion) {
-      // Only allow clicking a key that is part of the voiced chord (exact octave)
-      const id = keyId(note, octave);
-      if (!chordHighlightSet.has(id)) return;
-      // Map the clicked voiced note back to its inversion index:
-      // voicedNotes[0] is the current bass; chordNoteNames[invIdx] gives the original interval order.
-      // We want invIdx = position in chordNoteNames whose pitch class matches the clicked note.
+      // Any key whose pitch class belongs to the chord is a valid inversion pick
       const nIdx = noteIndex(note);
+      if (!chordNoteSet.has(nIdx)) return;
       const invIdx = chordNoteNames.findIndex(n => noteIndex(n) === nIdx);
       if (invIdx !== -1 && onPickInversion) {
         onPickInversion(invIdx);

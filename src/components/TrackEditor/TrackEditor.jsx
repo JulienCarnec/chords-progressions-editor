@@ -1,11 +1,17 @@
-import { useState } from 'react';
 import { useAppState } from '../../state/AppContext';
 import { usePlayback } from '../Playback/usePlayback';
+import { PianoKeyboard } from '../PianoKeyboard/PianoKeyboard';
 import styles from './TrackEditor.module.css';
 
 export function TrackEditor() {
   const { state, dispatch } = useAppState();
-  const { track, progressions, progressionOrder, isPlaying, playbackCursor, bpm, timeSig, instrument, metronome } = state;
+  const {
+    track, progressions, progressionOrder,
+    isPlaying, playbackCursor, playbackActiveNotes,
+    bpm, timeSig, instrument, metronome,
+    trackName, trackDescription,
+    scaleRoot, scaleKey,
+  } = state;
   const { play, stop } = usePlayback();
 
   function addToTrack(progressionId) {
@@ -13,7 +19,6 @@ export function TrackEditor() {
   }
 
   function playTrack() {
-    // Flatten track into all cells with progression markers
     const allSegments = [];
     for (const { progressionId, repetitions } of track) {
       const prog = progressions[progressionId];
@@ -23,7 +28,6 @@ export function TrackEditor() {
       }
     }
     if (!allSegments.length) return;
-    // Play first segment (full track playback with cursor is a future enhancement)
     play({
       cells: allSegments.flatMap(s => s.cells),
       progressionId: allSegments[0].progressionId,
@@ -33,17 +37,41 @@ export function TrackEditor() {
     });
   }
 
+  // Piano keyboard props — same logic as ChordGrid
+  const pianoPlaybackNotes = (isPlaying) ? (playbackActiveNotes?.length ? playbackActiveNotes : (playbackCursor?.notes ?? null)) : null;
+
   return (
     <div className={styles.wrapper}>
+      {/* ── Header ── */}
       <div className={styles.header}>
-        <h2 className={styles.title}>Track Editor</h2>
+        <div className={styles.headerLeft}>
+          <input
+            className={styles.trackNameInput}
+            placeholder="Track name…"
+            value={trackName}
+            onChange={e => dispatch({ type: 'SET_TRACK_NAME', name: e.target.value })}
+          />
+        </div>
         <div className={styles.actions}>
-          <button className={styles.playBtn} onClick={isPlaying ? stop : playTrack}>
+          <button className={`${styles.playBtn} ${isPlaying ? styles.stopBtn : ''}`}
+            onClick={isPlaying ? stop : playTrack}>
             {isPlaying ? '■ Stop' : '▶ Play Track'}
           </button>
         </div>
       </div>
 
+      {/* ── Description ── */}
+      <div className={styles.descSection}>
+        <textarea
+          className={styles.descTextarea}
+          placeholder="Track description, notes, lyrics…"
+          value={trackDescription}
+          rows={3}
+          onChange={e => dispatch({ type: 'SET_TRACK_DESCRIPTION', description: e.target.value })}
+        />
+      </div>
+
+      {/* ── Body: progressions + arrangement ── */}
       <div className={styles.body}>
         {/* Left: available progressions */}
         <div className={styles.available}>
@@ -55,7 +83,7 @@ export function TrackEditor() {
             </div>
           ))}
           {!progressionOrder.length && (
-            <p className={styles.hint}>Create progressions in the Editor first.</p>
+            <p className={styles.hint}>Create progressions in Chord Progressions first.</p>
           )}
         </div>
 
@@ -89,6 +117,17 @@ export function TrackEditor() {
             );
           })}
         </div>
+      </div>
+
+      {/* ── Piano keyboard ── */}
+      <div className={styles.pianoSection}>
+        <PianoKeyboard
+          scaleRoot={scaleRoot}
+          scaleKey={scaleKey}
+          selectedChord={null}
+          instrument={instrument}
+          playbackNotes={pianoPlaybackNotes}
+        />
       </div>
     </div>
   );

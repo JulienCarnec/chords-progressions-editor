@@ -13,13 +13,13 @@ export function TopBar({ onLoad }) {
       <span className={styles.logo}>🎵 Chord Progressions Editor</span>
       <nav className={styles.nav}>
         <button
-          className={`${styles.navBtn} ${state.activeView === 'editor' ? styles.active : ''}`}
-          onClick={() => dispatch({ type: 'SET_VIEW', view: 'editor' })}
-        >Editor</button>
-        <button
           className={`${styles.navBtn} ${state.activeView === 'track' ? styles.active : ''}`}
           onClick={() => dispatch({ type: 'SET_VIEW', view: 'track' })}
         >Track</button>
+        <button
+          className={`${styles.navBtn} ${state.activeView === 'chords' ? styles.active : ''}`}
+          onClick={() => dispatch({ type: 'SET_VIEW', view: 'chords' })}
+        >Chord Progressions</button>
       </nav>
       <div className={styles.actions}>
         <button className={styles.actionBtn} onClick={() => saveProject(state)}>💾 Save</button>

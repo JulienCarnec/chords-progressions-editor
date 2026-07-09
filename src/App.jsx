@@ -26,7 +26,7 @@ function AppInner() {
       <TopBar onLoad={handleLoad} />
       <PlaybackBar />
 
-      {state.activeView === 'editor' && (
+      {state.activeView === 'chords' && (
         <div className={styles.editorLayout}>
           <ProgressionManager />
           <main className={styles.main}>

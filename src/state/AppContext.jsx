@@ -29,9 +29,11 @@ export const INITIAL_STATE = {
 
   // Track arrangement: array of { progressionId, repetitions }
   track: [],
+  trackName: '',
+  trackDescription: '',
 
-  // Active view: 'editor' | 'track'
-  activeView: 'editor',
+  // Active view: 'chords' | 'track'
+  activeView: 'track',
   activeProgressionId: null,
 };
 
@@ -243,6 +245,11 @@ function reducer(state, action) {
       track.splice(action.to, 0, moved);
       return { ...state, track };
     }
+
+    case 'SET_TRACK_NAME':
+      return { ...state, trackName: action.name };
+    case 'SET_TRACK_DESCRIPTION':
+      return { ...state, trackDescription: action.description };
 
     case 'LOAD_PROJECT':
       return { ...INITIAL_STATE, ...action.project };

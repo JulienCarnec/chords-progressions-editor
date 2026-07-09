@@ -42,7 +42,7 @@
   line-height: 1;
 }
 
-/* Chord / manual / playing entries use a small coloured square */
+/* Highlighted / playing entries use a small coloured square */
 .legendSwatch {
   display: inline-block;
   width: 12px;
@@ -50,9 +50,8 @@
   border-radius: 2px;
   flex-shrink: 0;
 }
-.swatchChord   { background: #3b82f6; }
-.swatchManual  { background: #a855f7; }
-.swatchPlaying { background: #f59e0b; }
+.swatchHighlight { background: #3b82f6; }
+.swatchPlaying   { background: #f59e0b; }
 
 .actions {
   display: flex;
@@ -178,20 +177,49 @@
   line-height: 1;
 }
 
-/* ─── Dim — notes outside the scale (when scale is active) ── */
-.dimWhite { background: #e5e7eb !important; }
-.dimBlack { background: #374151 !important; }
+/* ─── Dim — cross-hatch pattern for notes outside the scale ─
+   SVG pattern via background-image; base colour preserved.  */
+.dimWhite {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(100,116,139,0.22) 0px,
+    rgba(100,116,139,0.22) 1.5px,
+    transparent 1.5px,
+    transparent 6px
+  ),
+  repeating-linear-gradient(
+    -45deg,
+    rgba(100,116,139,0.22) 0px,
+    rgba(100,116,139,0.22) 1.5px,
+    transparent 1.5px,
+    transparent 6px
+  ) !important;
+}
+.dimBlack {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.13) 0px,
+    rgba(255,255,255,0.13) 1.5px,
+    transparent 1.5px,
+    transparent 6px
+  ),
+  repeating-linear-gradient(
+    -45deg,
+    rgba(255,255,255,0.13) 0px,
+    rgba(255,255,255,0.13) 1.5px,
+    transparent 1.5px,
+    transparent 6px
+  ) !important;
+}
 
 /* ─── Background highlight layers ───────────────────────────
-   Priority: playing > manual > chord
+   Priority: playing > highlight (chord + manual)
    Applied as a class; scale never sets background.        */
 
 /* White keys */
-.bg_chord   { background: #bfdbfe !important; }
-.bg_manual  { background: #e9d5ff !important; }
-.bg_playing { background: #fde68a !important; }
+.bg_highlight { background: #bfdbfe !important; }
+.bg_playing   { background: #fde68a !important; }
 
 /* Black keys */
-.bg_chord_b   { background: #1d4ed8 !important; }
-.bg_manual_b  { background: #7c3aed !important; }
-.bg_playing_b { background: #d97706 !important; }
+.bg_highlight_b { background: #1d4ed8 !important; }
+.bg_playing_b   { background: #d97706 !important; }

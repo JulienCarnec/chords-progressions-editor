@@ -179,6 +179,7 @@ export function ChordGrid() {
           selectedChord={pianoSelectedChord}
           instrument={instrument}
           playbackNotes={pianoPlaybackNotes}
+          resetKey={selectedCellIndex}
         />
       </div>
     </div>

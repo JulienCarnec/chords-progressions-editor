@@ -48,22 +48,25 @@ function blackKeyDisplayName(sharpName, scaleRoot, scaleKey, scaleNotes) {
 /**
  * Derive the background colour class for a key based on layer priority:
  * 1. Playback (amber) — highest
- * 2. Manual toggle (purple)
- * 3. Chord (blue)
+ * 2. Highlight: chord note OR manually clicked (blue)
  * (Scale never sets background — dots only)
  */
-function bgClass(isBlack, { playing, manual, chord }) {
-  if (playing) return isBlack ? styles.bg_playing_b : styles.bg_playing;
-  if (manual)  return isBlack ? styles.bg_manual_b  : styles.bg_manual;
-  if (chord)   return isBlack ? styles.bg_chord_b   : styles.bg_chord;
+function bgClass(isBlack, { playing, highlight }) {
+  if (playing)   return isBlack ? styles.bg_playing_b   : styles.bg_playing;
+  if (highlight) return isBlack ? styles.bg_highlight_b : styles.bg_highlight;
   return '';
 }
 
-export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument = 'piano', playbackNotes = null }) {
+export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument = 'piano', playbackNotes = null, resetKey }) {
   const { playNotes, playArpeggio } = useSampler();
   const [manualHighlight, setManualHighlight] = useState(new Set());
   const wrapperRef = useRef(null);
   const [whiteW, setWhiteW] = useState(36);
+
+  // Clear manual highlights whenever the selected cell changes
+  useEffect(() => {
+    setManualHighlight(new Set());
+  }, [resetKey]);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -133,10 +136,8 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
         <div className={styles.legend}>
           <span className={styles.legendDot}>A</span>
           <span className={styles.legendLabel}>Scale</span>
-          <span className={`${styles.legendSwatch} ${styles.swatchChord}`} />
-          <span className={styles.legendLabel}>Chord</span>
-          <span className={`${styles.legendSwatch} ${styles.swatchManual}`} />
-          <span className={styles.legendLabel}>Manual</span>
+          <span className={`${styles.legendSwatch} ${styles.swatchHighlight}`} />
+          <span className={styles.legendLabel}>Highlighted</span>
           <span className={`${styles.legendSwatch} ${styles.swatchPlaying}`} />
           <span className={styles.legendLabel}>Playing</span>
         </div>
@@ -164,12 +165,11 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
         {WHITE_KEYS.map(({ note, octave, wIdx }) => {
           const nIdx = noteIndex(note);
           const layers = {
-            playing: playbackNoteSet.has(nIdx),
-            manual:  manualHighlight.has(nIdx),
-            chord:   chordNoteSet.has(nIdx),
-            scale:   scaleNoteSet.has(nIdx),
+            playing:   playbackNoteSet.has(nIdx),
+            highlight: chordNoteSet.has(nIdx) || manualHighlight.has(nIdx),
+            scale:     scaleNoteSet.has(nIdx),
           };
-          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.manual && !layers.chord;
+          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.highlight;
           return (
             <div
               key={`w-${note}${octave}`}
@@ -193,12 +193,11 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
         {BLACK_POSITIONS.map(({ sharp, octave, afterWIdx }) => {
           const nIdx = noteIndex(sharp);
           const layers = {
-            playing: playbackNoteSet.has(nIdx),
-            manual:  manualHighlight.has(nIdx),
-            chord:   chordNoteSet.has(nIdx),
-            scale:   scaleNoteSet.has(nIdx),
+            playing:   playbackNoteSet.has(nIdx),
+            highlight: chordNoteSet.has(nIdx) || manualHighlight.has(nIdx),
+            scale:     scaleNoteSet.has(nIdx),
           };
-          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.manual && !layers.chord;
+          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.highlight;
           const displayName = blackKeyDisplayName(sharp, scaleRoot, scaleKey, scaleNotes);
           const left = (afterWIdx + 1) * whiteW - blackW / 2;
           return (

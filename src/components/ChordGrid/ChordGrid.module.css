@@ -67,6 +67,22 @@
   gap: 3px;
 }
 
+.cellSelected > :first-child {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+.autoPlayLabel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  margin-left: auto;
+}
+
 .removeCell {
   font-size: 11px;
   line-height: 1;

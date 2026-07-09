@@ -3,11 +3,12 @@ import { useAppState } from '../../state/AppContext';
 import { ChordCell } from './ChordCell';
 import { ScaleSelector } from '../ScaleSelector/ScaleSelector';
 import { PianoKeyboard } from '../PianoKeyboard/PianoKeyboard';
+import { useSampler } from '../../audio/useSampler';
+import { getChordNotesVoiced } from '../../theory/chords';
 import styles from './ChordGrid.module.css';
 
 const CELLS_PER_ROW = 8;
 
-// Chunk an array into rows of at most `size`
 function chunkRows(arr, size) {
   const rows = [];
   for (let i = 0; i < arr.length; i += size) {
@@ -18,9 +19,12 @@ function chunkRows(arr, size) {
 
 export function ChordGrid() {
   const { state, dispatch } = useAppState();
-  const { progressions, activeProgressionId, isPlaying, playbackCursor, instrument } = state;
+  const { progressions, activeProgressionId, isPlaying, isPaused, playbackCursor, instrument, selectedCellChord } = state;
   const prog = progressions[activeProgressionId];
   const [transposeAmt, setTransposeAmt] = useState(0);
+  const [selectedCellIndex, setSelectedCellIndex] = useState(null);
+  const [autoPlay, setAutoPlay] = useState(true);
+  const { playNotes } = useSampler();
 
   if (!prog) {
     return (
@@ -56,6 +60,22 @@ export function ChordGrid() {
     dispatch({ type: 'REMOVE_CELL', progressionId: prog.id, cellIndex });
   }
 
+  function handleCellSelect(cellIndex, chord) {
+    setSelectedCellIndex(cellIndex);
+    dispatch({ type: 'SET_SELECTED_CELL_CHORD', chord: chord ?? null });
+    if (chord && autoPlay) {
+      const notes = getChordNotesVoiced(chord.root, chord.typeKey, chord.octave ?? 4, chord.inversion ?? 0);
+      playNotes(notes, '2n', instrument);
+    }
+  }
+
+  // Determine which chord to highlight on the piano:
+  // 1. During/after playback: use playbackCursor notes
+  // 2. Cell selected: use selectedCellChord
+  // 3. Fallback: first chord in grid
+  const pianoPlaybackNotes = (isPlaying || isPaused) ? (playbackCursor?.notes ?? null) : null;
+  const pianoSelectedChord = !isPlaying ? (selectedCellChord ?? firstChord) : null;
+
   return (
     <div className={styles.wrapper}>
       {/* Toolbar */}
@@ -81,6 +101,15 @@ export function ChordGrid() {
         <div className={styles.cellCount}>
           <span className={styles.smallLabel}>{prog.cells.length} cell{prog.cells.length !== 1 ? 's' : ''}</span>
         </div>
+        {/* Auto-play toggle */}
+        <label className={styles.autoPlayLabel}>
+          <input
+            type="checkbox"
+            checked={autoPlay}
+            onChange={e => setAutoPlay(e.target.checked)}
+          />
+          Auto-play on select
+        </label>
       </div>
 
       {/* Grid rows */}
@@ -91,8 +120,13 @@ export function ChordGrid() {
             <div key={rowIdx} className={styles.row}>
               {row.map((cell, colIdx) => {
                 const globalIdx = rowIdx * CELLS_PER_ROW + colIdx;
+                const isSelected = selectedCellIndex === globalIdx;
                 return (
-                  <div key={cell.id} className={styles.cellWrapper}>
+                  <div
+                    key={cell.id}
+                    className={`${styles.cellWrapper} ${isSelected ? styles.cellSelected : ''}`}
+                    onClick={() => handleCellSelect(globalIdx, cell.chord)}
+                  >
                     <ChordCell
                       cell={cell}
                       cellIndex={globalIdx}
@@ -100,13 +134,14 @@ export function ChordGrid() {
                       scaleRoot={scaleRoot}
                       scaleKey={scaleKey}
                       isCurrent={
-                        isPlaying &&
+                        (isPlaying || isPaused) &&
                         playbackCursor?.progressionId === prog.id &&
                         playbackCursor?.cellIndex === globalIdx
                       }
-                      onSetChord={(pid, ci, chord) =>
-                        dispatch({ type: 'SET_CELL_CHORD', progressionId: pid, cellIndex: ci, chord })
-                      }
+                      onSetChord={(pid, ci, chord) => {
+                        dispatch({ type: 'SET_CELL_CHORD', progressionId: pid, cellIndex: ci, chord });
+                        handleCellSelect(ci, chord);
+                      }}
                       onSplit={(pid, ci) =>
                         dispatch({ type: 'SPLIT_CELL', progressionId: pid, cellIndex: ci })
                       }
@@ -117,24 +152,18 @@ export function ChordGrid() {
                         dispatch({ type: 'SET_SUB_CELL_CHORD', progressionId: pid, cellIndex: ci, subIndex: si, chord })
                       }
                     />
-                    {/* Remove button on each cell */}
+                    {/* Remove button */}
                     <button
                       className={styles.removeCell}
                       title="Remove this cell"
                       disabled={prog.cells.length <= 1}
-                      onClick={() => removeCell(globalIdx)}
+                      onClick={e => { e.stopPropagation(); removeCell(globalIdx); }}
                     >×</button>
                   </div>
                 );
               })}
-
-              {/* Add button at the end of the last row only */}
               {isLastRow && (
-                <button
-                  className={styles.addCell}
-                  title="Add a cell"
-                  onClick={addCell}
-                >+</button>
+                <button className={styles.addCell} title="Add a cell" onClick={addCell}>+</button>
               )}
             </div>
           );
@@ -147,9 +176,9 @@ export function ChordGrid() {
         <PianoKeyboard
           scaleRoot={scaleRoot}
           scaleKey={scaleKey}
-          selectedChord={firstChord}
+          selectedChord={pianoSelectedChord}
           instrument={instrument}
-          playbackNotes={playbackCursor?.notes ?? null}
+          playbackNotes={pianoPlaybackNotes}
         />
       </div>
     </div>

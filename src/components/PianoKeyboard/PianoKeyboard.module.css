@@ -70,7 +70,6 @@
 .white:hover { background: #f0f9ff; }
 
 .noteName {
-  font-size: 9px;
   color: #9ca3af;
   pointer-events: none;
 }
@@ -95,7 +94,6 @@
 .black:hover { background: #374151; }
 
 .blackNoteName {
-  font-size: 8px;
   color: #9ca3af;
   pointer-events: none;
   writing-mode: vertical-rl;

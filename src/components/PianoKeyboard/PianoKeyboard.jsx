@@ -164,7 +164,7 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
               style={{ left: wIdx * whiteW, width: whiteW, height: whiteH }}
               onClick={e => handleKeyClick(e, note, octave)}
             >
-              <span className={styles.noteName}>{note}</span>
+              <span className={styles.noteName} style={{ fontSize: Math.max(8, Math.round(whiteW * 0.35)) }}>{note}</span>
             </div>
           );
         })}
@@ -182,7 +182,7 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
               style={{ left, width: blackW, height: blackH }}
               onClick={e => handleKeyClick(e, sharp, octave)}
             >
-              <span className={styles.blackNoteName}>{displayName}</span>
+              <span className={styles.blackNoteName} style={{ fontSize: Math.max(6, Math.round(blackW * 0.32)) }}>{displayName}</span>
             </div>
           );
         })}

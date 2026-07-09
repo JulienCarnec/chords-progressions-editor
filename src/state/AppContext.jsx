@@ -12,7 +12,11 @@ export const INITIAL_STATE = {
 
   // Playback
   isPlaying: false,
-  playbackCursor: null, // { progressionId, cellIndex }
+  isPaused: false,
+  playbackCursor: null, // { progressionId, cellIndex, notes }
+
+  // Currently selected cell chord (for piano roll highlight)
+  selectedCellChord: null, // { root, typeKey }
 
   // Scale
   scaleRoot: null,
@@ -47,9 +51,13 @@ function reducer(state, action) {
       return { ...state, scaleRoot: action.root, scaleKey: action.key };
 
     case 'SET_PLAYING':
-      return { ...state, isPlaying: action.playing };
+      return { ...state, isPlaying: action.playing, isPaused: false };
+    case 'SET_PAUSED':
+      return { ...state, isPaused: action.paused };
     case 'SET_PLAYBACK_CURSOR':
       return { ...state, playbackCursor: action.cursor };
+    case 'SET_SELECTED_CELL_CHORD':
+      return { ...state, selectedCellChord: action.chord };
 
     case 'SET_VIEW':
       return { ...state, activeView: action.view };

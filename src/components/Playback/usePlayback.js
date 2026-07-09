@@ -29,6 +29,20 @@ export function usePlayback() {
     dispatch({ type: 'SET_PLAYBACK_CURSOR', cursor: null });
   }, [dispatch]);
 
+  // Pause: freeze transport, keep cursor/notes highlighted
+  const pause = useCallback(() => {
+    Tone.getTransport().pause();
+    dispatch({ type: 'SET_PLAYING', playing: false });
+    dispatch({ type: 'SET_PAUSED', paused: true });
+  }, [dispatch]);
+
+  // Resume from pause
+  const resume = useCallback(() => {
+    Tone.getTransport().start();
+    dispatch({ type: 'SET_PLAYING', playing: true });
+    dispatch({ type: 'SET_PAUSED', paused: false });
+  }, [dispatch]);
+
   const play = useCallback(async ({
     cells,
     progressionId,
@@ -106,7 +120,7 @@ export function usePlayback() {
     transport.start();
   }, [stop, getSynth, dispatch]);
 
-  return { play, stop };
+  return { play, stop, pause, resume };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

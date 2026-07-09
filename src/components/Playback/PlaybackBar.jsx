@@ -20,11 +20,11 @@ const NOTE_VALUES = ['1n', '2n', '4n', '8n', '16n'];
 
 export function PlaybackBar() {
   const { state, dispatch } = useAppState();
-  const { play, stop } = usePlayback();
+  const { play, stop, pause, resume } = usePlayback();
   const [playStyle, setPlayStyle] = useState('block');
   const [noteValue, setNoteValue] = useState('4n');
 
-  const { isPlaying, bpm, timeSig, instrument, metronome, progressions, activeProgressionId } = state;
+  const { isPlaying, isPaused, bpm, timeSig, instrument, metronome, progressions, activeProgressionId } = state;
 
   function handlePlay() {
     const prog = progressions[activeProgressionId];
@@ -41,13 +41,22 @@ export function PlaybackBar() {
 
   return (
     <div className={styles.bar}>
-      {/* Play / Stop */}
-      <button
-        className={`${styles.playBtn} ${isPlaying ? styles.stop : ''}`}
-        onClick={isPlaying ? stop : handlePlay}
-      >
-        {isPlaying ? '■ Stop' : '▶ Play'}
-      </button>
+      {/* Play / Pause / Resume / Stop */}
+      {!isPlaying && !isPaused && (
+        <button className={styles.playBtn} onClick={handlePlay}>▶ Play</button>
+      )}
+      {isPlaying && (
+        <>
+          <button className={styles.playBtn} onClick={pause}>⏸ Pause</button>
+          <button className={`${styles.playBtn} ${styles.stop}`} onClick={stop}>■ Stop</button>
+        </>
+      )}
+      {isPaused && (
+        <>
+          <button className={styles.playBtn} onClick={resume}>▶ Resume</button>
+          <button className={`${styles.playBtn} ${styles.stop}`} onClick={stop}>■ Stop</button>
+        </>
+      )}
 
       {/* BPM with ± buttons */}
       <div className={styles.bpmGroup}>

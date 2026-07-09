@@ -104,17 +104,19 @@ export function PianoKeyboard({
 
   const scaleNoteSet   = scaleRoot && scaleKey ? getScaleNoteSet(scaleRoot, scaleKey) : new Set();
   const scaleNotes     = scaleRoot && scaleKey ? getScaleNotes(scaleRoot, scaleKey)   : [];
-  // chord note pitch-classes (for chord highlight)
-  const chordNoteSet   = selectedChord
-    ? new Set(getChordNotes(selectedChord.root, selectedChord.typeKey).map(n => noteIndex(n)))
-    : new Set();
-  // voiced chord notes as "note+octave" strings (for inversion candidate logic)
+  // voiced chord notes as "note+octave" strings — exact keys to highlight
   const voicedNotes    = selectedChord
     ? getChordNotesVoiced(
         selectedChord.root, selectedChord.typeKey,
         selectedChord.octave ?? 4, selectedChord.inversion ?? 0
       )
     : [];
+  // per-key highlight set for the chord (only the voiced keys, not all octaves)
+  const chordHighlightSet = new Set(voicedNotes);
+  // pitch-class set still needed for inversion-picker candidate detection
+  const chordNoteSet   = selectedChord
+    ? new Set(getChordNotes(selectedChord.root, selectedChord.typeKey).map(n => noteIndex(n)))
+    : new Set();
   // The note names that form the chord (pitch-class only, in interval order)
   const chordNoteNames = selectedChord
     ? getChordNotes(selectedChord.root, selectedChord.typeKey)   // e.g. ['C','E','G']
@@ -151,9 +153,11 @@ export function PianoKeyboard({
     });
   }
 
-  function playChord() {
-    if (!voicedNotes.length) return;
-    playNotes(voicedNotes, '2n', instrument);
+  // All currently highlighted keys = voiced chord notes + manually clicked keys
+  function playHighlighted() {
+    const all = new Set([...voicedNotes, ...manualHighlight]);
+    if (!all.size) return;
+    playNotes([...all], '2n', instrument);
   }
 
   function playScale() {
@@ -163,15 +167,15 @@ export function PianoKeyboard({
     playArpeggio(notes, 'up', '8n', instrument);
   }
 
-  function playManual() {
-    if (!manualHighlight.size) return;
-    const notes = [...manualHighlight].sort();
-    playNotes(notes, '2n', instrument);
-  }
-
   // Detect chord from manual highlights (pitch-class level, strip octave)
   const manualPitchClasses = [...manualHighlight].map(id => noteIndex(id.replace(/\d+$/, '')));
   const detectedChord = manualPitchClasses.length >= 2 ? identifyChord(manualPitchClasses) : null;
+  // Label: chord name or note list + "(unknown)"
+  const detectedLabel = detectedChord
+    ? `→ ${detectedChord.label}`
+    : manualPitchClasses.length >= 2
+      ? `→ ${manualPitchClasses.sort((a,b)=>a-b).map(i => CHROMATIC[i]).join(', ')} (unknown)`
+      : null;
   const hasScale = scaleNoteSet.size > 0;
 
   return (
@@ -189,17 +193,14 @@ export function PianoKeyboard({
           {scaleNoteSet.size > 0 && (
             <button className={styles.actionBtn} onClick={playScale}>▶ Scale</button>
           )}
-          {chordNoteSet.size > 0 && (
-            <button className={styles.actionBtn} onClick={playChord}>▶ Chord</button>
+          {(voicedNotes.length > 0 || manualHighlight.size > 0) && (
+            <button className={styles.actionBtn} onClick={playHighlighted}>▶ Play highlighted</button>
           )}
           {manualHighlight.size > 0 && (
-            <>
-              <button className={styles.actionBtn} onClick={playManual}>▶ Manual</button>
-              <button className={styles.clearBtn} onClick={() => setManualHighlight(new Set())}>Clear</button>
-            </>
+            <button className={styles.clearBtn} onClick={() => setManualHighlight(new Set())}>Clear</button>
           )}
-          {detectedChord && (
-            <span className={styles.detectedChord}>→ {detectedChord.label}</span>
+          {detectedLabel && (
+            <span className={styles.detectedChord}>{detectedLabel}</span>
           )}
           {/* Inversion picker — only when a chord is selected and callback provided */}
           {selectedChord && onPickInversion && (
@@ -224,7 +225,7 @@ export function PianoKeyboard({
           const isChordNote = chordNoteSet.has(nIdx);
           const layers = {
             playing:      playbackNoteSet.has(nIdx),
-            highlight:    isChordNote || manualHighlight.has(id),
+            highlight:    chordHighlightSet.has(id) || manualHighlight.has(id),
             invCandidate: pickingInversion && isChordNote,
             invFirst:     pickingInversion && isChordNote &&
                           chordNoteNames[0] && noteIndex(chordNoteNames[selectedChord?.inversion ?? 0]) === nIdx,
@@ -257,7 +258,7 @@ export function PianoKeyboard({
           const isChordNote = chordNoteSet.has(nIdx);
           const layers = {
             playing:      playbackNoteSet.has(nIdx),
-            highlight:    isChordNote || manualHighlight.has(id),
+            highlight:    chordHighlightSet.has(id) || manualHighlight.has(id),
             invCandidate: pickingInversion && isChordNote,
             invFirst:     pickingInversion && isChordNote &&
                           chordNoteNames[0] && noteIndex(chordNoteNames[selectedChord?.inversion ?? 0]) === nIdx,

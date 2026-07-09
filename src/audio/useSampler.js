@@ -1,7 +1,6 @@
 import { useCallback, useRef } from 'react';
 import * as Tone from 'tone';
 
-// Instrument sample configs
 const INSTRUMENT_CONFIGS = {
   piano: {
     urls: {
@@ -18,23 +17,29 @@ const INSTRUMENT_CONFIGS = {
   },
 };
 
-// Fallback synth when samples are loading or unavailable
+// Shared reverb — created once, connected to destination
+let reverbNode = null;
+function getReverb() {
+  if (!reverbNode) {
+    reverbNode = new Tone.Reverb({ decay: 1.8, wet: 0.25 }).toDestination();
+  }
+  return reverbNode;
+}
+
 function makeSynth() {
   return new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: 'triangle' },
     envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 1.2 },
-  }).toDestination();
+  }).connect(getReverb());
 }
 
 let samplerCache = {};
-let activeSynth = null;
 
 export function useSampler() {
   const synthRef = useRef(null);
 
   const getSynth = useCallback(async (instrument = 'piano') => {
     await Tone.start();
-    // Use fallback synth for non-piano instruments for now
     if (instrument !== 'piano') {
       if (!synthRef.current) synthRef.current = makeSynth();
       return synthRef.current;
@@ -45,30 +50,21 @@ export function useSampler() {
       const sampler = new Tone.Sampler({
         ...INSTRUMENT_CONFIGS.piano,
         onload: () => {
-          samplerCache.piano = sampler.toDestination();
-          resolve(samplerCache.piano);
+          const s = sampler.connect(getReverb());
+          samplerCache.piano = s;
+          resolve(s);
         },
       });
-      // Resolve with synth fallback while loading
       if (!synthRef.current) synthRef.current = makeSynth();
       resolve(synthRef.current);
     });
   }, []);
 
-  /**
-   * Play an array of note names, e.g. ['C4', 'E4', 'G4']
-   * duration: Tone.js duration string like '2n', '4n'
-   */
   const playNotes = useCallback(async (notes, duration = '2n', instrument = 'piano') => {
     const synth = await getSynth(instrument);
     synth.triggerAttackRelease(notes, duration);
   }, [getSynth]);
 
-  /**
-   * Play notes as an arpeggio
-   * style: 'up' | 'down' | 'updown'
-   * noteDuration: e.g. '8n'
-   */
   const playArpeggio = useCallback(async (notes, style = 'up', noteDuration = '8n', instrument = 'piano') => {
     const synth = await getSynth(instrument);
     let seq = [...notes];

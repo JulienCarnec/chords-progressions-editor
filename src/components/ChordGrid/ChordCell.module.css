@@ -50,6 +50,13 @@
   cursor: pointer;
 }
 
+.pickerRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
 .chordSelect {
   font-size: 11px;
   padding: 2px 4px;
@@ -57,8 +64,18 @@
   border-radius: 4px;
   background: #fff;
   cursor: pointer;
-  max-width: 110px;
   width: 100%;
+}
+
+.miniSelect {
+  font-size: 10px;
+  padding: 1px 3px;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px;
+  background: #f9fafb;
+  cursor: pointer;
+  width: 100%;
+  color: #6b7280;
 }
 
 .splitBtn, .unsplitBtn {

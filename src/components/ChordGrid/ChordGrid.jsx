@@ -149,6 +149,7 @@ export function ChordGrid() {
           scaleKey={scaleKey}
           selectedChord={firstChord}
           instrument={instrument}
+          playbackNotes={playbackCursor?.notes ?? null}
         />
       </div>
     </div>

@@ -118,3 +118,7 @@
 .hl_scale_b  { background: #16a34a !important; }
 .hl_chord_b  { background: #2563eb !important; }
 .hl_manual_b { background: #7c3aed !important; }
+
+/* Playback highlight — bright amber */
+.hl_playing   { background: #f59e0b !important; }
+.hl_playing_b { background: #b45309 !important; }

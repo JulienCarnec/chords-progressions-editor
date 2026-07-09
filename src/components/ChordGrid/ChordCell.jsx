@@ -1,5 +1,6 @@
 import { CHROMATIC } from '../../theory/notes';
 import { CHORD_TYPES, chordLabel, getChordRole } from '../../theory/chords';
+import { noteIndex } from '../../theory/notes';
 import styles from './ChordCell.module.css';
 
 const ROLE_STYLES = {

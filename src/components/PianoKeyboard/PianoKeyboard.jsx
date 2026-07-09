@@ -61,7 +61,7 @@ function blackKeyDisplayName(sharpName, scaleRoot, scaleKey, scaleNotes) {
   return sharpName;
 }
 
-export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument = 'piano' }) {
+export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument = 'piano', playbackNotes = null }) {
   const { playNotes, playArpeggio } = useSampler();
   const [manualHighlight, setManualHighlight] = useState(new Set());
   const [highlightMode, setHighlightMode] = useState('scale');
@@ -71,6 +71,11 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
 
   const chordNoteSet = selectedChord
     ? new Set(getChordNotes(selectedChord.root, selectedChord.typeKey).map(n => noteIndex(n)))
+    : new Set();
+
+  // Playback highlight: note names from the currently playing chord (no octave)
+  const playbackNoteSet = playbackNotes
+    ? new Set(playbackNotes.map(n => noteIndex(n)))
     : new Set();
 
   function isHighlighted(noteIdx) {
@@ -144,10 +149,11 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
         {/* White keys */}
         {WHITE_KEYS.map(({ note, octave, wIdx }) => {
           const nIdx = noteIndex(note);
+          const playing = playbackNoteSet.has(nIdx);
           return (
             <div
               key={`w-${note}${octave}`}
-              className={`${styles.white} ${isHighlighted(nIdx) ? styles[`hl_${highlightMode}`] : ''}`}
+              className={`${styles.white} ${playing ? styles.hl_playing : isHighlighted(nIdx) ? styles[`hl_${highlightMode}`] : ''}`}
               style={{ left: wIdx * WHITE_W }}
               onClick={e => handleKeyClick(e, note, octave)}
             >
@@ -159,11 +165,12 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
         {/* Black keys — rendered AFTER white keys as siblings so they paint on top */}
         {BLACK_KEYS.map(({ sharp, octave, left }) => {
           const nIdx = noteIndex(sharp);
+          const playing = playbackNoteSet.has(nIdx);
           const displayName = blackKeyDisplayName(sharp, scaleRoot, scaleKey, scaleNotes);
           return (
             <div
               key={`b-${sharp}${octave}`}
-              className={`${styles.black} ${isHighlighted(nIdx) ? styles[`hl_${highlightMode}_b`] : ''}`}
+              className={`${styles.black} ${playing ? styles.hl_playing_b : isHighlighted(nIdx) ? styles[`hl_${highlightMode}_b`] : ''}`}
               style={{ left }}
               onClick={e => handleKeyClick(e, sharp, octave)}
             >

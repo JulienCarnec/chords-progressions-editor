@@ -7,6 +7,42 @@
   flex-wrap: wrap;
 }
 
+.bpmGroup {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.bpmBtn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  background: #374151;
+  color: #f9fafb;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.bpmBtn:hover { background: #4b5563; }
+
+.bpmInput {
+  width: 44px;
+  padding: 3px 4px;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  background: #374151;
+  color: #f9fafb;
+  font-size: 13px;
+  text-align: center;
+}
+
+.bpmLabel {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
 .playBtn {
   padding: 6px 20px;
   border-radius: 6px;

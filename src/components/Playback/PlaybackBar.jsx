@@ -1,15 +1,19 @@
 import { useState } from 'react';
+import * as Tone from 'tone';
 import { useAppState } from '../../state/AppContext';
 import { usePlayback } from './usePlayback';
 import styles from './PlaybackBar.module.css';
 
 const PLAY_STYLES = [
-  { id: 'block',           label: 'Block chord' },
-  { id: 'strum-on',        label: 'On-beat strum' },
-  { id: 'strum-off',       label: 'Off-beat strum' },
-  { id: 'arpeggio-up',     label: 'Arpeggio ↑' },
-  { id: 'arpeggio-down',   label: 'Arpeggio ↓' },
-  { id: 'arpeggio-updown', label: 'Arpeggio ↑↓' },
+  { id: 'block',                label: 'Block chord' },
+  { id: 'strum-on',             label: 'On-beat strum' },
+  { id: 'strum-off',            label: 'Off-beat strum' },
+  { id: 'arpeggio-up',          label: 'Arpeggio ↑' },
+  { id: 'arpeggio-down',        label: 'Arpeggio ↓' },
+  { id: 'arpeggio-updown',      label: 'Arpeggio ↑↓' },
+  { id: 'arpeggio-up-sustain',     label: 'Arpeggio ↑ (sustain)' },
+  { id: 'arpeggio-down-sustain',   label: 'Arpeggio ↓ (sustain)' },
+  { id: 'arpeggio-updown-sustain', label: 'Arpeggio ↑↓ (sustain)' },
 ];
 
 const NOTE_VALUES = ['1n', '2n', '4n', '8n', '16n'];
@@ -20,25 +24,24 @@ export function PlaybackBar() {
   const [playStyle, setPlayStyle] = useState('block');
   const [noteValue, setNoteValue] = useState('4n');
 
-  const {
-    isPlaying, bpm, timeSig, instrument, metronome,
-    progressions, activeProgressionId,
-  } = state;
+  const { isPlaying, bpm, timeSig, instrument, metronome, progressions, activeProgressionId } = state;
 
   function handlePlay() {
     const prog = progressions[activeProgressionId];
     if (!prog) return;
-    play({
-      cells: prog.cells,
-      progressionId: prog.id,
-      bpm, timeSig, instrument,
-      playStyle, noteValue,
-      metronome,
-    });
+    play({ cells: prog.cells, progressionId: prog.id, bpm, timeSig, instrument, playStyle, noteValue, metronome });
+  }
+
+  function adjustBpm(delta) {
+    const next = Math.min(300, Math.max(20, bpm + delta));
+    dispatch({ type: 'SET_BPM', bpm: next });
+    // Update transport immediately if playing
+    if (isPlaying) Tone.getTransport().bpm.value = next;
   }
 
   return (
     <div className={styles.bar}>
+      {/* Play / Stop */}
       <button
         className={`${styles.playBtn} ${isPlaying ? styles.stop : ''}`}
         onClick={isPlaying ? stop : handlePlay}
@@ -46,21 +49,27 @@ export function PlaybackBar() {
         {isPlaying ? '■ Stop' : '▶ Play'}
       </button>
 
-      <select
-        className={styles.select}
-        value={playStyle}
-        onChange={e => setPlayStyle(e.target.value)}
-      >
-        {PLAY_STYLES.map(s => (
-          <option key={s.id} value={s.id}>{s.label}</option>
-        ))}
+      {/* BPM with ± buttons */}
+      <div className={styles.bpmGroup}>
+        <button className={styles.bpmBtn} onClick={() => adjustBpm(-1)}>−</button>
+        <input
+          type="number"
+          className={styles.bpmInput}
+          value={bpm}
+          min={20} max={300}
+          onChange={e => adjustBpm(Number(e.target.value) - bpm)}
+        />
+        <span className={styles.bpmLabel}>BPM</span>
+        <button className={styles.bpmBtn} onClick={() => adjustBpm(1)}>+</button>
+      </div>
+
+      {/* Play style */}
+      <select className={styles.select} value={playStyle} onChange={e => setPlayStyle(e.target.value)}>
+        {PLAY_STYLES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
       </select>
 
-      <select
-        className={styles.select}
-        value={noteValue}
-        onChange={e => setNoteValue(e.target.value)}
-      >
+      {/* Note value (subdivision) */}
+      <select className={styles.select} value={noteValue} onChange={e => setNoteValue(e.target.value)}>
         {NOTE_VALUES.map(v => <option key={v} value={v}>{v}</option>)}
       </select>
 
@@ -71,7 +80,7 @@ export function PlaybackBar() {
           checked={metronome.enabled}
           onChange={e => dispatch({ type: 'SET_METRONOME', payload: { enabled: e.target.checked } })}
         />
-        Metronome
+        Metro
       </label>
       {metronome.enabled && (
         <select
@@ -80,7 +89,7 @@ export function PlaybackBar() {
           onChange={e => dispatch({ type: 'SET_METRONOME', payload: { mode: e.target.value } })}
         >
           <option value="click">Click</option>
-          <option value="drum">Drum pattern</option>
+          <option value="drum">Drums</option>
         </select>
       )}
     </div>

@@ -36,6 +36,40 @@ export function getChordNotes(root, typeKey) {
 }
 
 /**
+ * Get chord notes with octave suffix applied, respecting inversion and base octave.
+ * inversion: 0 = root position, 1 = 1st inversion, 2 = 2nd inversion, etc.
+ * baseOctave: e.g. 4
+ * Returns e.g. ['E4','G4','C5'] for C major 1st inversion at octave 4
+ */
+export function getChordNotesVoiced(root, typeKey, baseOctave = 4, inversion = 0) {
+  const def = CHORD_TYPES[typeKey];
+  if (!def) return [];
+  const rootIdx = noteIndex(root);
+  // Build semitone offsets from the root (mod 12 already in intervals)
+  const intervals = [...def.intervals];
+  const notes = [];
+  // Rotate intervals by inversion count
+  const inv = inversion % intervals.length;
+  const rotated = [...intervals.slice(inv), ...intervals.slice(0, inv).map(i => i + 12)];
+  // Normalise so first note is 0
+  const offset = rotated[0];
+  let octaveShift = 0;
+  let prevSemi = -1;
+  for (const semi of rotated) {
+    const normalised = semi - offset;
+    // Track octave shifts for notes that wrap around
+    const noteIdx = ((rootIdx + semi) % 12 + 12) % 12;
+    const noteName2 = noteName(noteIdx);
+    // Compute octave: start at baseOctave, bump up whenever we wrap
+    if (normalised < prevSemi) octaveShift++;
+    const oct = baseOctave + octaveShift + Math.floor((rootIdx + semi) / 12);
+    notes.push(`${noteName2}${oct}`);
+    prevSemi = normalised;
+  }
+  return notes;
+}
+
+/**
  * Build a chord label, e.g. "Cmaj7"
  */
 export function chordLabel(root, typeKey) {

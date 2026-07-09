@@ -80,63 +80,85 @@ export function ChordGrid() {
     }
   }
 
-  // Determine which chord to highlight on the piano:
-  // 1. During/after playback: use playbackCursor notes
-  // 2. Cell selected: use selectedCellChord
-  // 3. Fallback: first chord in grid
   const pianoPlaybackNotes = (isPlaying || isPaused) ? (playbackActiveNotes.length ? playbackActiveNotes : (playbackCursor?.notes ?? null)) : null;
   const pianoSelectedChord = !isPlaying ? (selectedCellChord ?? firstChord) : null;
 
   return (
     <div className={styles.wrapper}>
-      {/* Toolbar */}
-      <div className={styles.toolbar}>
-        <ScaleSelector
-          scaleRoot={scaleRoot}
-          scaleKey={scaleKey}
-          firstChord={firstChord}
-          onChange={handleScaleChange}
-        />
-        <PatternControls
-          playStyle={globalPlayStyle}
-          noteValue={globalNoteValue}
-          onChange={({ playStyle, noteValue }) => {
-            if (playStyle !== null) setGlobalPlayStyle(playStyle);
-            setGlobalNoteValue(noteValue ?? globalNoteValue);
-          }}
-        />
-        <div className={styles.transpose}>
-          <label className={styles.smallLabel}>Transpose</label>
-          <input
-            type="number"
-            className={styles.transposeInput}
-            value={transposeAmt}
-            onChange={e => setTransposeAmt(Number(e.target.value))}
-            min={-12} max={12}
-          />
-          <span className={styles.smallLabel}>st</span>
-          <button className={styles.btn} onClick={handleTranspose}>Apply</button>
+
+      {/* ── Top control panels ────────────────────────────── */}
+      <div className={styles.panels}>
+
+        {/* Scale panel */}
+        <div className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <span className={styles.panelIcon}>♩</span>
+            <span className={styles.panelTitle}>Scale</span>
+          </div>
+          <div className={styles.panelBody}>
+            <ScaleSelector
+              scaleRoot={scaleRoot}
+              scaleKey={scaleKey}
+              firstChord={firstChord}
+              onChange={handleScaleChange}
+            />
+            <div className={styles.divider} />
+            <div className={styles.row}>
+              <span className={styles.smallLabel}>Transpose</span>
+              <input
+                type="number"
+                className={styles.transposeInput}
+                value={transposeAmt}
+                onChange={e => setTransposeAmt(Number(e.target.value))}
+                min={-12} max={12}
+              />
+              <span className={styles.smallLabel}>st</span>
+              <button className={styles.btn} onClick={handleTranspose}>Apply</button>
+            </div>
+          </div>
         </div>
-        <div className={styles.cellCount}>
-          <span className={styles.smallLabel}>{prog.cells.length} cell{prog.cells.length !== 1 ? 's' : ''}</span>
+
+        {/* Pattern panel */}
+        <div className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <span className={styles.panelIcon}>♪</span>
+            <span className={styles.panelTitle}>Pattern</span>
+            <span className={styles.panelHint}>global default</span>
+          </div>
+          <div className={styles.panelBody}>
+            <PatternControls
+              playStyle={globalPlayStyle}
+              noteValue={globalNoteValue}
+              onChange={({ playStyle, noteValue }) => {
+                if (playStyle !== null) setGlobalPlayStyle(playStyle);
+                setGlobalNoteValue(noteValue ?? globalNoteValue);
+              }}
+            />
+          </div>
         </div>
-        {/* Auto-play toggle */}
-        <label className={styles.autoPlayLabel}>
-          <input
-            type="checkbox"
-            checked={autoPlay}
-            onChange={e => setAutoPlay(e.target.checked)}
-          />
-          Auto-play on select
-        </label>
+
+        {/* Grid meta */}
+        <div className={styles.metaPanel}>
+          <span className={styles.cellCount}>
+            {prog.cells.length} cell{prog.cells.length !== 1 ? 's' : ''}
+          </span>
+          <label className={styles.autoPlayLabel}>
+            <input
+              type="checkbox"
+              checked={autoPlay}
+              onChange={e => setAutoPlay(e.target.checked)}
+            />
+            Auto-play
+          </label>
+        </div>
       </div>
 
-      {/* Grid rows */}
+      {/* ── Grid rows ─────────────────────────────────────── */}
       <div className={styles.gridRows}>
         {rows.map((row, rowIdx) => {
           const isLastRow = rowIdx === rows.length - 1;
           return (
-            <div key={rowIdx} className={styles.row}>
+            <div key={rowIdx} className={styles.rowGroup}>
               {row.map((cell, colIdx) => {
                 const globalIdx = rowIdx * CELLS_PER_ROW + colIdx;
                 const isSelected = selectedCellIndex === globalIdx;
@@ -174,7 +196,6 @@ export function ChordGrid() {
                         dispatch({ type: 'SET_CELL_PLAY_STYLE', progressionId: pid, cellIndex: ci, playStyle: ps, noteValue: nv })
                       }
                     />
-                    {/* Remove button */}
                     <button
                       className={styles.removeCell}
                       title="Remove this cell"
@@ -192,7 +213,7 @@ export function ChordGrid() {
         })}
       </div>
 
-      {/* Piano keyboard */}
+      {/* ── Piano keyboard ────────────────────────────────── */}
       <div className={styles.pianoSection}>
         <h3 className={styles.sectionTitle}>Piano</h3>
         <PianoKeyboard
@@ -205,21 +226,12 @@ export function ChordGrid() {
           onPickInversion={selectedCellIndex !== null ? (invIdx, clickedOctave) => {
             const cell = prog.cells[selectedCellIndex];
             if (!cell?.chord) return;
-            // Back-calculate the root's baseOctave from the clicked bass note's octave.
-            // The bass note (intervals[invIdx]) sits at:
-            //   bassOctave = baseOctave + floor((rootIdx + intervals[invIdx]) / 12)
-            // So: baseOctave = clickedOctave - floor((rootIdx + intervals[invIdx]) / 12)
             const def = CHORD_TYPES[cell.chord.typeKey];
             const rootIdx = noteIndex(cell.chord.root);
             const bassInterval = def ? def.intervals[invIdx] ?? 0 : 0;
             const baseOctave = clickedOctave - Math.floor((rootIdx + bassInterval) / 12);
             const updated = { ...cell.chord, inversion: invIdx, octave: baseOctave };
-            dispatch({
-              type: 'SET_CELL_CHORD',
-              progressionId: prog.id,
-              cellIndex: selectedCellIndex,
-              chord: updated,
-            });
+            dispatch({ type: 'SET_CELL_CHORD', progressionId: prog.id, cellIndex: selectedCellIndex, chord: updated });
             dispatch({ type: 'SET_SELECTED_CELL_CHORD', chord: updated });
           } : undefined}
         />

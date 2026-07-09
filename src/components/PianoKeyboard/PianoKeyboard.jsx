@@ -212,7 +212,21 @@ export function PianoKeyboard({
   function playScale() {
     const indices = [...scaleNoteSet];
     if (!indices.length) return;
-    const notes = indices.sort((a, b) => a - b).map(i => `${CHROMATIC[i]}${START_OCTAVE + 1}`);
+    // Start from the root note — rotate indices so root comes first, wrap higher notes up an octave
+    const rootIdx = scaleRoot ? noteIndex(scaleRoot) : indices.sort((a, b) => a - b)[0];
+    const sorted = [...indices].sort((a, b) => a - b);
+    const rootPos = sorted.indexOf(rootIdx);
+    const reordered = rootPos >= 0
+      ? [...sorted.slice(rootPos), ...sorted.slice(0, rootPos)]
+      : sorted;
+    const baseOct = START_OCTAVE + 1;
+    let oct = baseOct;
+    let prevIdx = -1;
+    const notes = reordered.map(i => {
+      if (prevIdx !== -1 && i <= prevIdx) oct++;
+      prevIdx = i;
+      return `${CHROMATIC[i]}${oct}`;
+    });
     playArpeggio(notes, 'up', '8n', instrument);
 
     // Cancel any previous scale timers

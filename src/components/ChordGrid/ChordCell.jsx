@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CHROMATIC, noteIndex, noteName } from '../../theory/notes';
 import { CHORD_TYPES, chordLabel, getChordRole } from '../../theory/chords';
 import { PatternControls } from './PatternControls';
@@ -20,6 +21,13 @@ const ROLE_OPTION_COLORS = {
   'subdominant-II': '#e9d5ff',
 };
 
+const ROLE_PREFIX = {
+  'dominant-I':     '(dom. I) ',
+  'dominant-II':    '(dom. II) ',
+  'subdominant-I':  '(sub. I) ',
+  'subdominant-II': '(sub. II) ',
+};
+
 const ROLE_ORDER = ['in-scale', 'dominant-I', 'dominant-II', 'subdominant-I', 'subdominant-II', 'out'];
 
 // Build all root+type combos sorted by role relevance
@@ -28,10 +36,11 @@ function buildOptions(scaleRoot, scaleKey) {
   for (const root of CHROMATIC) {
     for (const [typeKey] of Object.entries(CHORD_TYPES)) {
       const role = getChordRole(root, typeKey, scaleRoot, scaleKey);
-      combos.push({ root, typeKey, role, label: chordLabel(root, typeKey) });
+      const base  = chordLabel(root, typeKey);
+      const prefix = ROLE_PREFIX[role] ?? '';
+      combos.push({ root, typeKey, role, label: `${prefix}${base}` });
     }
   }
-  // Sort: scale-relevant first, then by root order
   combos.sort((a, b) => {
     const ri = ROLE_ORDER.indexOf(a.role);
     const rj = ROLE_ORDER.indexOf(b.role);
@@ -72,6 +81,7 @@ function ChordPicker({ value, scaleRoot, scaleKey, onChange }) {
         const [root, typeKey] = e.target.value.split('|');
         onChange({ root, typeKey });
       }}
+      onClick={e => e.stopPropagation()}
     >
       <option value="">— pick chord —</option>
       {options.map(({ root, typeKey, role, label }) => (
@@ -84,6 +94,23 @@ function ChordPicker({ value, scaleRoot, scaleKey, onChange }) {
         </option>
       ))}
     </select>
+  );
+}
+
+/**
+ * Small icon button that toggles the per-cell custom pattern panel.
+ * Shows a filled icon when a custom pattern is set, outline when global.
+ */
+function PatternToggle({ hasCustom, open, onToggle }) {
+  return (
+    <button
+      className={`${styles.patternToggle} ${hasCustom ? styles.patternToggleActive : ''}`}
+      title={hasCustom ? 'Custom pattern (click to edit)' : 'Use global pattern (click to override)'}
+      onClick={e => { e.stopPropagation(); onToggle(); }}
+    >
+      {/* Simple music-note icon via text — ♩ when global, ♪ when custom */}
+      {hasCustom ? '♪' : '♩'}
+    </button>
   );
 }
 
@@ -100,6 +127,10 @@ export function ChordCell({
   onSetSubChord,
   onSetPlayStyle,
 }) {
+  const [showPattern, setShowPattern] = useState(false);
+
+  const hasCustom = cell.playStyle != null;
+
   function role(chord) {
     if (!chord) return 'out';
     return getChordRole(chord.root, chord.typeKey, scaleRoot, scaleKey);
@@ -108,6 +139,7 @@ export function ChordCell({
   if (cell.split) {
     return (
       <div className={`${styles.cell} ${styles.split} ${isCurrent ? styles.current : ''}`}>
+        <div className={styles.splitInner}>
         {cell.subCells.map((sc, si) => (
           <div key={si} className={`${styles.subCell} ${ROLE_STYLES[role(sc)] ?? ''}`}>
             {sc
@@ -121,20 +153,35 @@ export function ChordCell({
               onChange={chord => onSetSubChord(progressionId, cellIndex, si, chord)}
             />
             {si === 0 && (
-              <button className={styles.unsplitBtn} title="Merge cells" onClick={() => onUnsplit(progressionId, cellIndex)}>⊞</button>
+              <button
+                className={styles.unsplitBtn}
+                title="Merge cells"
+                onClick={e => { e.stopPropagation(); onUnsplit(progressionId, cellIndex); }}
+              >⊞</button>
             )}
           </div>
         ))}
+        </div>
+        {/* Pattern override toggle at bottom-right of split cell */}
         {onSetPlayStyle && (
-          <PatternControls
-            compact
-            allowNull
-            playStyle={cell.playStyle ?? null}
-            noteValue={cell.noteValue ?? null}
-            onChange={({ playStyle, noteValue }) =>
-              onSetPlayStyle(progressionId, cellIndex, playStyle, noteValue)
-            }
-          />
+          <div className={styles.splitFooter}>
+            <PatternToggle
+              hasCustom={hasCustom}
+              open={showPattern}
+              onToggle={() => setShowPattern(p => !p)}
+            />
+            {showPattern && (
+              <PatternControls
+                compact
+                allowNull
+                playStyle={cell.playStyle ?? null}
+                noteValue={cell.noteValue ?? null}
+                onChange={({ playStyle, noteValue }) => {
+                  onSetPlayStyle(progressionId, cellIndex, playStyle, noteValue);
+                }}
+              />
+            )}
+          </div>
         )}
       </div>
     );
@@ -153,16 +200,29 @@ export function ChordCell({
         scaleKey={scaleKey}
         onChange={chord => onSetChord(progressionId, cellIndex, chord)}
       />
-      <button className={styles.splitBtn} title="Split cell" onClick={() => onSplit(progressionId, cellIndex)}>⊢</button>
-      {onSetPlayStyle && (
+      <div className={styles.cellFooter}>
+        <button
+          className={styles.splitBtn}
+          title="Split cell"
+          onClick={e => { e.stopPropagation(); onSplit(progressionId, cellIndex); }}
+        >⊢</button>
+        {onSetPlayStyle && (
+          <PatternToggle
+            hasCustom={hasCustom}
+            open={showPattern}
+            onToggle={() => setShowPattern(p => !p)}
+          />
+        )}
+      </div>
+      {showPattern && onSetPlayStyle && (
         <PatternControls
           compact
           allowNull
           playStyle={cell.playStyle ?? null}
           noteValue={cell.noteValue ?? null}
-          onChange={({ playStyle, noteValue }) =>
-            onSetPlayStyle(progressionId, cellIndex, playStyle, noteValue)
-          }
+          onChange={({ playStyle, noteValue }) => {
+            onSetPlayStyle(progressionId, cellIndex, playStyle, noteValue);
+          }}
         />
       )}
     </div>

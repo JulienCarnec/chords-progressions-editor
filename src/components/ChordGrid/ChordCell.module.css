@@ -1,10 +1,12 @@
+/* ─── Cell sizing: fixed width so split cells are the same size as normal cells ─ */
 .cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 4px;
-  min-width: 90px;
+  width: 110px;
+  flex-shrink: 0;
   min-height: 80px;
   border: 1.5px solid #e5e7eb;
   border-radius: 8px;
@@ -12,19 +14,27 @@
   background: #f9fafb;
   position: relative;
   transition: background 0.15s;
+  box-sizing: border-box;
 }
 
 .cell.current {
   box-shadow: 0 0 0 3px #3b82f6;
 }
 
+/* Split cell: same outer width, sub-cells divide it 50/50 */
 .split {
   display: flex;
-  flex-direction: row;
-  min-width: 90px;
+  flex-direction: column;
   padding: 0;
   overflow: hidden;
   gap: 0;
+}
+
+.splitInner {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  width: 100%;
 }
 
 .subCell {
@@ -35,9 +45,33 @@
   justify-content: center;
   padding: 6px 4px;
   border-right: 1px dashed #d1d5db;
+  min-width: 0;
 }
 .subCell:last-child { border-right: none; }
 
+/* Footer row inside non-split cells */
+.cellFooter {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* Footer row at the bottom of split cells */
+.splitFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 3px 4px;
+  border-top: 1px solid #e5e7eb;
+  width: 100%;
+  gap: 3px;
+}
+
+/* ─── Labels ─────────────────────────────────────────────── */
 .label {
   font-size: 14px;
   font-weight: 700;
@@ -50,13 +84,7 @@
   cursor: pointer;
 }
 
-.pickerRow {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-}
-
+/* ─── Selects ────────────────────────────────────────────── */
 .chordSelect {
   font-size: 11px;
   padding: 2px 4px;
@@ -78,20 +106,44 @@
   color: #6b7280;
 }
 
+/* ─── Buttons ────────────────────────────────────────────── */
 .splitBtn, .unsplitBtn {
   font-size: 11px;
-  padding: 1px 4px;
+  padding: 1px 5px;
   border: 1px solid #d1d5db;
   border-radius: 3px;
   background: #f3f4f6;
   cursor: pointer;
   color: #6b7280;
+  flex-shrink: 0;
 }
+.splitBtn:hover, .unsplitBtn:hover { background: #e5e7eb; }
 
-/* Role colour backgrounds */
-.inScale      { background: #dcfce7; border-color: #22c55e; }
-.in_scale     { background: #dcfce7; }
-.dominantI,   .dominant_I   { background: #fef9c3; border-color: #eab308; }
-.dominantII,  .dominant_II  { background: #ffedd5; border-color: #f97316; }
-.subdominantI, .subdominant_I  { background: #dbeafe; border-color: #3b82f6; }
-.subdominantII, .subdominant_II { background: #f3e8ff; border-color: #a855f7; }
+/* Pattern override toggle icon button */
+.patternToggle {
+  font-size: 13px;
+  line-height: 1;
+  padding: 1px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.patternToggle:hover { color: #6b7280; background: #f3f4f6; }
+
+/* Lit up when cell has a custom pattern set */
+.patternToggleActive {
+  color: #7c3aed;
+  border-color: #a855f7;
+  background: #f5f3ff;
+}
+.patternToggleActive:hover { background: #ede9fe; }
+
+/* ─── Role colour backgrounds ─────────────────────────────── */
+.inScale       { background: #dcfce7; border-color: #22c55e; }
+.dominantI     { background: #fef9c3; border-color: #eab308; }
+.dominantII    { background: #ffedd5; border-color: #f97316; }
+.subdominantI  { background: #dbeafe; border-color: #3b82f6; }
+.subdominantII { background: #f3e8ff; border-color: #a855f7; }

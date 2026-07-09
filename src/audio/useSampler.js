@@ -34,6 +34,8 @@ function makeSynth() {
 }
 
 let samplerCache = {};
+// Single shared promise so concurrent calls all wait for the same load
+let samplerLoadingPromise = null;
 
 export function useSampler() {
   const synthRef = useRef(null);
@@ -44,20 +46,23 @@ export function useSampler() {
       if (!synthRef.current) synthRef.current = makeSynth();
       return synthRef.current;
     }
+    // Already loaded — return immediately
     if (samplerCache.piano) return samplerCache.piano;
-
-    return new Promise((resolve) => {
+    // Loading already started — wait for the same promise
+    if (samplerLoadingPromise) return samplerLoadingPromise;
+    // First call — kick off the load and store the promise
+    samplerLoadingPromise = new Promise((resolve) => {
       const sampler = new Tone.Sampler({
         ...INSTRUMENT_CONFIGS.piano,
         onload: () => {
           const s = sampler.connect(getReverb());
           samplerCache.piano = s;
+          samplerLoadingPromise = null;
           resolve(s);
         },
       });
-      if (!synthRef.current) synthRef.current = makeSynth();
-      resolve(synthRef.current);
     });
+    return samplerLoadingPromise;
   }, []);
 
   const playNotes = useCallback(async (notes, duration = '2n', instrument = 'piano') => {

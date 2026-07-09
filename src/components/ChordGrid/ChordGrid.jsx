@@ -20,7 +20,7 @@ function chunkRows(arr, size) {
 
 export function ChordGrid() {
   const { state, dispatch } = useAppState();
-  const { progressions, activeProgressionId, isPlaying, isPaused, playbackCursor, instrument, selectedCellChord } = state;
+  const { progressions, activeProgressionId, isPlaying, isPaused, playbackCursor, playbackActiveNotes, instrument, selectedCellChord } = state;
   const prog = progressions[activeProgressionId];
   const [transposeAmt, setTransposeAmt] = useState(0);
   const [selectedCellIndex, setSelectedCellIndex] = useState(null);
@@ -74,7 +74,7 @@ export function ChordGrid() {
   // 1. During/after playback: use playbackCursor notes
   // 2. Cell selected: use selectedCellChord
   // 3. Fallback: first chord in grid
-  const pianoPlaybackNotes = (isPlaying || isPaused) ? (playbackCursor?.notes ?? null) : null;
+  const pianoPlaybackNotes = (isPlaying || isPaused) ? (playbackActiveNotes.length ? playbackActiveNotes : (playbackCursor?.notes ?? null)) : null;
   const pianoSelectedChord = !isPlaying ? (selectedCellChord ?? firstChord) : null;
 
   return (

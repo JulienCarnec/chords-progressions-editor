@@ -90,6 +90,7 @@ export function usePlayback() {
     playStyle = 'block',
     noteValue = '4n',
     arpOctaves = 1,
+    arpRepeat = true,   // true = fill bar, false = one pass only
     humanize = 0,       // 0–1
     metronome,
   }) => {
@@ -111,23 +112,25 @@ export function usePlayback() {
       let cursor = timeOffset;
       for (const seg of segments) {
         const { notes, dur, cellIndex } = seg;
-        const events = buildEvents(notes, playStyle, noteValue, dur, arpOctaves, humanize);
+        const events = buildEvents(notes, playStyle, noteValue, dur, arpOctaves, arpRepeat, humanize);
 
         for (const ev of events) {
           // Apply timing jitter — keep within cell bounds
           const rawT = cursor + ev.time + ev.jitter;
-          const t = Math.max(cursor, rawT); // never fire before segment start
+          const t = Math.max(cursor, rawT);
           const evNotes = ev.notes;
           const evDur = ev.duration;
           const evVel = ev.velocity;
-          const part = new Tone.ToneEvent((time) => {
-            synth.triggerAttackRelease(evNotes, evDur, time, evVel);
+          // Dispatch per-note highlight on attack
+          const part = new Tone.ToneEvent(() => {
+            synth.triggerAttackRelease(evNotes, evDur, Tone.now(), evVel);
+            dispatch({ type: 'SET_PLAYBACK_NOTES', notes: evNotes });
           });
           part.start(t);
           partsRef.current.push(part);
         }
 
-        // Cursor marker for piano roll
+        // Cursor marker for piano roll (cell-level, for cell outline highlight)
         const ci = cellIndex;
         const noteNames = notes.map(n => n.replace(/\d+$/, ''));
         const markerEvent = new Tone.ToneEvent(() => {
@@ -225,7 +228,7 @@ function strumBaseVel(t, stepSec, isFirstEvent, isOnBeat, style) {
  * Build the event list for one chord segment.
  * Each event: { time, notes, duration, velocity, jitter }
  */
-function buildEvents(notes, playStyle, noteValue, cellDur, arpOctaves = 1, humanize = 0) {
+function buildEvents(notes, playStyle, noteValue, cellDur, arpOctaves = 1, arpRepeat = true, humanize = 0) {
   const stepSec = Tone.Time(noteValue).toSeconds();
   const events = [];
   // Tolerance for "on-beat" detection: within 2 ms
@@ -267,7 +270,9 @@ function buildEvents(notes, playStyle, noteValue, cellDur, arpOctaves = 1, human
     if (baseStyle === 'arpeggio-updown') seq = [...seq, ...[...seq].reverse().slice(1)];
     let t = 0;
     let ni = 0;
-    while (t < cellDur - 0.001) {
+    // arpRepeat=false: play through seq once, then stop
+    const maxSteps = arpRepeat ? Infinity : seq.length;
+    while (t < cellDur - 0.001 && ni < maxSteps) {
       const duration = sustain
         ? cellDur - t - RELEASE_GAP
         : stepSec - RELEASE_GAP;
@@ -331,7 +336,7 @@ function buildEvents(notes, playStyle, noteValue, cellDur, arpOctaves = 1, human
       events.push({
         time:     t,
         notes:    [figure[figIdx]],
-        duration: stepSec - RELEASE_GAP,
+        duration: cellDur - t - RELEASE_GAP,   // sustain to end of bar
         velocity: humanVel(figVels[figIdx], humanize),
         jitter:   humanJitter(humanize),
       });

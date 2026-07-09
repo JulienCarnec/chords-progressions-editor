@@ -51,7 +51,8 @@
   flex-shrink: 0;
 }
 .swatchHighlight { background: #3b82f6; }
-.swatchPlaying   { background: #f59e0b; }
+.swatchAttack    { background: #f59e0b; }
+.swatchSustain   { background: #fde68a; border: 1px solid #d97706; }
 
 .actions {
   display: flex;
@@ -218,13 +219,15 @@
 
 /* White keys */
 .bg_highlight  { background: #bfdbfe !important; }
-.bg_playing    { background: #fde68a !important; }
-.bg_invCand    { background: #bbf7d0 !important; }   /* green — chord note, clickable */
-.bg_invFirst   { background: #4ade80 !important; }   /* bright green — current bass note */
+.bg_attack     { background: #f59e0b !important; }   /* bright amber — note onset */
+.bg_sustain    { background: #fde68a !important; }   /* soft amber  — note held */
+.bg_invCand    { background: #bbf7d0 !important; }
+.bg_invFirst   { background: #4ade80 !important; }
 
 /* Black keys */
 .bg_highlight_b  { background: #1d4ed8 !important; }
-.bg_playing_b    { background: #d97706 !important; }
+.bg_attack_b     { background: #b45309 !important; }  /* bright dark-amber */
+.bg_sustain_b    { background: #d97706 !important; }  /* softer amber */
 .bg_invCand_b    { background: #16a34a !important; }
 .bg_invFirst_b   { background: #15803d !important; }
 

@@ -47,18 +47,22 @@ function blackKeyDisplayName(sharpName, scaleRoot, scaleKey, scaleNotes) {
 
 /**
  * Derive the background colour class for a key based on layer priority:
- * 1. Playback (amber) — highest
- * 2. Inversion-candidate (green outline) — only in pick-inversion mode
- * 3. Highlight: chord note OR manually clicked (blue)
+ * 1. Attack blink (bright amber)  — highest, fades after ATTACK_MS
+ * 2. Sustain (soft amber)
+ * 3. Inversion-candidate (green)
+ * 4. Highlight: chord note OR manually clicked (blue)
  * (Scale never sets background — dots only)
  */
-function bgClass(isBlack, { playing, highlight, invCandidate, invFirst }) {
-  if (playing)      return isBlack ? styles.bg_playing_b   : styles.bg_playing;
+function bgClass(isBlack, { attack, sustain, highlight, invCandidate, invFirst }) {
+  if (attack)       return isBlack ? styles.bg_attack_b    : styles.bg_attack;
+  if (sustain)      return isBlack ? styles.bg_sustain_b   : styles.bg_sustain;
   if (invFirst)     return isBlack ? styles.bg_invFirst_b  : styles.bg_invFirst;
   if (invCandidate) return isBlack ? styles.bg_invCand_b   : styles.bg_invCand;
   if (highlight)    return isBlack ? styles.bg_highlight_b : styles.bg_highlight;
   return '';
 }
+
+const ATTACK_MS = 150; // how long the bright-amber blink lasts
 
 /**
  * keyId — unique string for a specific physical key, e.g. "C4", "F#3"
@@ -69,7 +73,7 @@ export function PianoKeyboard({
   scaleRoot, scaleKey,
   selectedChord,         // { root, typeKey, octave, inversion }
   instrument = 'piano',
-  playbackNotes = null,
+  playbackNotes = null,  // array of exact "note+octave" strings currently sounding
   resetKey,
   onPickInversion,       // (inversionIndex: number) => void
 }) {
@@ -79,12 +83,39 @@ export function PianoKeyboard({
   const [pickingInversion, setPickingInversion] = useState(false);
   const wrapperRef = useRef(null);
   const [whiteW, setWhiteW] = useState(36);
+  // attackedAt: Map<keyId, timestamp> — set when a note starts playing
+  const attackedAt = useRef(new Map());
+  // ticker forces re-render after ATTACK_MS so blink clears
+  const [, setTick] = useState(0);
 
   // Clear manual highlights and exit inversion mode whenever the selected cell changes
   useEffect(() => {
     setManualHighlight(new Set());
     setPickingInversion(false);
   }, [resetKey]);
+
+  // When playbackNotes changes, record attack timestamp for each new note
+  const prevPlaybackNotes = useRef(null);
+  const playbackSet = new Set(playbackNotes ?? []);
+  const prevSet = new Set(prevPlaybackNotes.current ?? []);
+  // Detect newly-attacked notes (appeared in this render that weren't in the last)
+  for (const id of playbackSet) {
+    if (!prevSet.has(id)) {
+      attackedAt.current.set(id, Date.now());
+    }
+  }
+  // Clear attack timestamps for notes no longer playing
+  for (const id of attackedAt.current.keys()) {
+    if (!playbackSet.has(id)) attackedAt.current.delete(id);
+  }
+  prevPlaybackNotes.current = playbackNotes;
+
+  // Schedule a re-render after ATTACK_MS to clear the blink state
+  useEffect(() => {
+    if (!playbackNotes?.length) return;
+    const id = setTimeout(() => setTick(t => t + 1), ATTACK_MS + 10);
+    return () => clearTimeout(id);
+  }, [playbackNotes]);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -122,9 +153,13 @@ export function PianoKeyboard({
     ? getChordNotes(selectedChord.root, selectedChord.typeKey)   // e.g. ['C','E','G']
     : [];
 
-  const playbackNoteSet = playbackNotes
-    ? new Set(playbackNotes.map(n => noteIndex(n)))
-    : new Set();
+  // playbackSet already computed above (for attack tracking)
+  // Helper: is a keyId in attack phase?
+  const now = Date.now();
+  function isAttacking(id) {
+    const t = attackedAt.current.get(id);
+    return t !== undefined && (now - t) < ATTACK_MS;
+  }
 
   // ── Normal click: play + toggle manual highlight per specific key ─────────
   function handleKeyClick(e, note, octave) {
@@ -186,8 +221,10 @@ export function PianoKeyboard({
           <span className={styles.legendLabel}>Scale</span>
           <span className={`${styles.legendSwatch} ${styles.swatchHighlight}`} />
           <span className={styles.legendLabel}>Highlighted</span>
-          <span className={`${styles.legendSwatch} ${styles.swatchPlaying}`} />
-          <span className={styles.legendLabel}>Playing</span>
+          <span className={`${styles.legendSwatch} ${styles.swatchAttack}`} />
+          <span className={styles.legendLabel}>Attack</span>
+          <span className={`${styles.legendSwatch} ${styles.swatchSustain}`} />
+          <span className={styles.legendLabel}>Sustain</span>
         </div>
         <div className={styles.actions}>
           {scaleNoteSet.size > 0 && (
@@ -223,15 +260,17 @@ export function PianoKeyboard({
           const nIdx = noteIndex(note);
           const id   = keyId(note, octave);
           const isChordNote = chordNoteSet.has(nIdx);
+          const isSounding  = playbackSet.has(id);
           const layers = {
-            playing:      playbackNoteSet.has(nIdx),
+            attack:       isSounding && isAttacking(id),
+            sustain:      isSounding && !isAttacking(id),
             highlight:    chordHighlightSet.has(id) || manualHighlight.has(id),
             invCandidate: pickingInversion && isChordNote,
             invFirst:     pickingInversion && isChordNote &&
                           chordNoteNames[0] && noteIndex(chordNoteNames[selectedChord?.inversion ?? 0]) === nIdx,
             scale:        scaleNoteSet.has(nIdx),
           };
-          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.highlight && !layers.invCandidate;
+          const dimmed = hasScale && !layers.scale && !isSounding && !layers.highlight && !layers.invCandidate;
           return (
             <div
               key={`w-${note}${octave}`}
@@ -256,15 +295,17 @@ export function PianoKeyboard({
           const nIdx = noteIndex(sharp);
           const id   = keyId(sharp, octave);
           const isChordNote = chordNoteSet.has(nIdx);
+          const isSounding  = playbackSet.has(id);
           const layers = {
-            playing:      playbackNoteSet.has(nIdx),
+            attack:       isSounding && isAttacking(id),
+            sustain:      isSounding && !isAttacking(id),
             highlight:    chordHighlightSet.has(id) || manualHighlight.has(id),
             invCandidate: pickingInversion && isChordNote,
             invFirst:     pickingInversion && isChordNote &&
                           chordNoteNames[0] && noteIndex(chordNoteNames[selectedChord?.inversion ?? 0]) === nIdx,
             scale:        scaleNoteSet.has(nIdx),
           };
-          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.highlight && !layers.invCandidate;
+          const dimmed = hasScale && !layers.scale && !isSounding && !layers.highlight && !layers.invCandidate;
           const displayName = blackKeyDisplayName(sharp, scaleRoot, scaleKey, scaleNotes);
           const left = (afterWIdx + 1) * whiteW - blackW / 2;
           return (

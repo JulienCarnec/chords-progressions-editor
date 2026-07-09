@@ -21,7 +21,7 @@ const INSTRUMENT_CONFIGS = {
 let reverbNode = null;
 function getReverb() {
   if (!reverbNode) {
-    reverbNode = new Tone.Reverb({ decay: 1.8, wet: 0.25 }).toDestination();
+    reverbNode = new Tone.Reverb({ decay: 1.8, wet: 0.50 }).toDestination();
   }
   return reverbNode;
 }

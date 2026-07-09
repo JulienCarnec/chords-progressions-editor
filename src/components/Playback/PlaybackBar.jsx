@@ -29,15 +29,16 @@ export function PlaybackBar() {
   const [playStyle, setPlayStyle] = useState('block');
   const [noteValue, setNoteValue] = useState('4n');
   const [arpOctaves, setArpOctaves] = useState(1);
+  const [arpRepeat, setArpRepeat] = useState(true);
   const [humanize, setHumanize] = useState(0);
-  const [reverbPct, setReverbPct] = useState(25); // matches default wet: 0.25
+  const [reverbPct, setReverbPct] = useState(50); // matches default wet: 0.50
 
   const { isPlaying, isPaused, bpm, timeSig, instrument, metronome, progressions, activeProgressionId } = state;
 
   function handlePlay() {
     const prog = progressions[activeProgressionId];
     if (!prog) return;
-    play({ cells: prog.cells, progressionId: prog.id, bpm, timeSig, instrument, playStyle, noteValue, arpOctaves, humanize: humanize / 100, metronome });
+    play({ cells: prog.cells, progressionId: prog.id, bpm, timeSig, instrument, playStyle, noteValue, arpOctaves, arpRepeat, humanize: humanize / 100, metronome });
   }
 
   function adjustBpm(delta) {
@@ -85,18 +86,28 @@ export function PlaybackBar() {
         {PLAY_STYLES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
       </select>
 
-      {/* Arpeggio octave span — only shown for arpeggio styles */}
+      {/* Arpeggio controls — only shown for arpeggio styles */}
       {playStyle.startsWith('arpeggio') && (
-        <div className={styles.arpOctGroup}>
-          <button
-            className={`${styles.arpOctBtn} ${arpOctaves === 1 ? styles.arpOctActive : ''}`}
-            onClick={() => setArpOctaves(1)}
-          >1 oct</button>
-          <button
-            className={`${styles.arpOctBtn} ${arpOctaves === 2 ? styles.arpOctActive : ''}`}
-            onClick={() => setArpOctaves(2)}
-          >2 oct</button>
-        </div>
+        <>
+          <div className={styles.arpOctGroup}>
+            <button
+              className={`${styles.arpOctBtn} ${arpOctaves === 1 ? styles.arpOctActive : ''}`}
+              onClick={() => setArpOctaves(1)}
+            >1 oct</button>
+            <button
+              className={`${styles.arpOctBtn} ${arpOctaves === 2 ? styles.arpOctActive : ''}`}
+              onClick={() => setArpOctaves(2)}
+            >2 oct</button>
+          </div>
+          <label className={styles.metLabel}>
+            <input
+              type="checkbox"
+              checked={arpRepeat}
+              onChange={e => setArpRepeat(e.target.checked)}
+            />
+            Repeat
+          </label>
+        </>
       )}
 
       {/* Note value (subdivision) */}

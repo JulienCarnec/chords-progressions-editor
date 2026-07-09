@@ -47,8 +47,7 @@
 
 .keyboard {
   position: relative;
-  height: 130px;
-  /* width set inline */
+  /* width and height set inline (responsive) */
 }
 
 /* ─── White keys ──────────────────────────────────────────── */
@@ -56,8 +55,7 @@
 .white {
   position: absolute;
   top: 0;
-  width: 36px;
-  height: 130px;
+  /* width and height set inline */
   border: 1px solid #9ca3af;
   border-radius: 0 0 5px 5px;
   background: #fff;
@@ -83,8 +81,7 @@
 .black {
   position: absolute;
   top: 0;
-  width: 24px;
-  height: 80px;
+  /* width and height set inline */
   background: #1f2937;
   border-radius: 0 0 4px 4px;
   cursor: pointer;

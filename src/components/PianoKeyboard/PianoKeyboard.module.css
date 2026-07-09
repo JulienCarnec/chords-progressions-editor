@@ -213,13 +213,46 @@
 }
 
 /* ─── Background highlight layers ───────────────────────────
-   Priority: playing > highlight (chord + manual)
+   Priority: playing > invFirst > invCandidate > highlight
    Applied as a class; scale never sets background.        */
 
 /* White keys */
-.bg_highlight { background: #bfdbfe !important; }
-.bg_playing   { background: #fde68a !important; }
+.bg_highlight  { background: #bfdbfe !important; }
+.bg_playing    { background: #fde68a !important; }
+.bg_invCand    { background: #bbf7d0 !important; }   /* green — chord note, clickable */
+.bg_invFirst   { background: #4ade80 !important; }   /* bright green — current bass note */
 
 /* Black keys */
-.bg_highlight_b { background: #1d4ed8 !important; }
-.bg_playing_b   { background: #d97706 !important; }
+.bg_highlight_b  { background: #1d4ed8 !important; }
+.bg_playing_b    { background: #d97706 !important; }
+.bg_invCand_b    { background: #16a34a !important; }
+.bg_invFirst_b   { background: #15803d !important; }
+
+/* ─── Inversion picker button ─────────────────────────────── */
+.invBtn {
+  padding: 3px 10px;
+  border: 1px solid #6b7280;
+  border-radius: 4px;
+  background: #f9fafb;
+  font-size: 12px;
+  cursor: pointer;
+}
+.invBtn:hover { background: #e5e7eb; }
+
+.invBtnActive {
+  padding: 3px 10px;
+  border: 1px solid #16a34a;
+  border-radius: 4px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.invBtnActive:hover { background: #bbf7d0; }
+
+.invHint {
+  font-size: 11px;
+  color: #15803d;
+  font-style: italic;
+}

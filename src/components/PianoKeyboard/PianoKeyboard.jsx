@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { CHROMATIC, ENHARMONIC, noteIndex } from '../../theory/notes';
+import { CHROMATIC, ENHARMONIC, noteIndex, noteName } from '../../theory/notes';
 import { getScaleNoteSet, getScaleNotes } from '../../theory/scales';
-import { getChordNotes, identifyChord } from '../../theory/chords';
+import { getChordNotes, getChordNotesVoiced, identifyChord } from '../../theory/chords';
 import { useSampler } from '../../audio/useSampler';
 import styles from './PianoKeyboard.module.css';
 
@@ -48,24 +48,42 @@ function blackKeyDisplayName(sharpName, scaleRoot, scaleKey, scaleNotes) {
 /**
  * Derive the background colour class for a key based on layer priority:
  * 1. Playback (amber) — highest
- * 2. Highlight: chord note OR manually clicked (blue)
+ * 2. Inversion-candidate (green outline) — only in pick-inversion mode
+ * 3. Highlight: chord note OR manually clicked (blue)
  * (Scale never sets background — dots only)
  */
-function bgClass(isBlack, { playing, highlight }) {
-  if (playing)   return isBlack ? styles.bg_playing_b   : styles.bg_playing;
-  if (highlight) return isBlack ? styles.bg_highlight_b : styles.bg_highlight;
+function bgClass(isBlack, { playing, highlight, invCandidate, invFirst }) {
+  if (playing)      return isBlack ? styles.bg_playing_b   : styles.bg_playing;
+  if (invFirst)     return isBlack ? styles.bg_invFirst_b  : styles.bg_invFirst;
+  if (invCandidate) return isBlack ? styles.bg_invCand_b   : styles.bg_invCand;
+  if (highlight)    return isBlack ? styles.bg_highlight_b : styles.bg_highlight;
   return '';
 }
 
-export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument = 'piano', playbackNotes = null, resetKey }) {
+/**
+ * keyId — unique string for a specific physical key, e.g. "C4", "F#3"
+ */
+function keyId(note, octave) { return `${note}${octave}`; }
+
+export function PianoKeyboard({
+  scaleRoot, scaleKey,
+  selectedChord,         // { root, typeKey, octave, inversion }
+  instrument = 'piano',
+  playbackNotes = null,
+  resetKey,
+  onPickInversion,       // (inversionIndex: number) => void
+}) {
   const { playNotes, playArpeggio } = useSampler();
+  // manualHighlight: Set of "note+octave" strings (per-key, not pitch-class)
   const [manualHighlight, setManualHighlight] = useState(new Set());
+  const [pickingInversion, setPickingInversion] = useState(false);
   const wrapperRef = useRef(null);
   const [whiteW, setWhiteW] = useState(36);
 
-  // Clear manual highlights whenever the selected cell changes
+  // Clear manual highlights and exit inversion mode whenever the selected cell changes
   useEffect(() => {
     setManualHighlight(new Set());
+    setPickingInversion(false);
   }, [resetKey]);
 
   useEffect(() => {
@@ -81,35 +99,61 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
   const blackW = Math.round(whiteW * BLACK_W_RATIO);
   const blackH = Math.round(whiteW * 2.2);
   const whiteH = Math.round(whiteW * 3.6);
-  // Uniform circle/font size — same for white and black keys
-  const circleSize = Math.max(14, Math.round(whiteW * 0.55));
+  const circleSize    = Math.max(14, Math.round(whiteW * 0.55));
   const circleFontSize = Math.max(7, Math.round(circleSize * 0.55));
 
-  const scaleNoteSet  = scaleRoot && scaleKey ? getScaleNoteSet(scaleRoot, scaleKey) : new Set();
-  const scaleNotes    = scaleRoot && scaleKey ? getScaleNotes(scaleRoot, scaleKey) : [];
-  const chordNoteSet  = selectedChord
+  const scaleNoteSet   = scaleRoot && scaleKey ? getScaleNoteSet(scaleRoot, scaleKey) : new Set();
+  const scaleNotes     = scaleRoot && scaleKey ? getScaleNotes(scaleRoot, scaleKey)   : [];
+  // chord note pitch-classes (for chord highlight)
+  const chordNoteSet   = selectedChord
     ? new Set(getChordNotes(selectedChord.root, selectedChord.typeKey).map(n => noteIndex(n)))
     : new Set();
+  // voiced chord notes as "note+octave" strings (for inversion candidate logic)
+  const voicedNotes    = selectedChord
+    ? getChordNotesVoiced(
+        selectedChord.root, selectedChord.typeKey,
+        selectedChord.octave ?? 4, selectedChord.inversion ?? 0
+      )
+    : [];
+  // The note names that form the chord (pitch-class only, in interval order)
+  const chordNoteNames = selectedChord
+    ? getChordNotes(selectedChord.root, selectedChord.typeKey)   // e.g. ['C','E','G']
+    : [];
+
   const playbackNoteSet = playbackNotes
     ? new Set(playbackNotes.map(n => noteIndex(n)))
     : new Set();
 
+  // ── Normal click: play + toggle manual highlight per specific key ─────────
   function handleKeyClick(e, note, octave) {
     e.stopPropagation();
+
+    if (pickingInversion) {
+      // Only allow picking a note that belongs to the chord
+      const nIdx = noteIndex(note);
+      if (!chordNoteSet.has(nIdx)) return;
+      // Find which inversion this note corresponds to
+      // inversion N means the Nth chord note is the bass note
+      const invIdx = chordNoteNames.findIndex(n => noteIndex(n) === nIdx);
+      if (invIdx !== -1 && onPickInversion) {
+        onPickInversion(invIdx);
+      }
+      setPickingInversion(false);
+      return;
+    }
+
     playNotes([`${note}${octave}`], '4n', instrument);
-    const idx = noteIndex(note);
+    const id = keyId(note, octave);
     setManualHighlight(prev => {
       const next = new Set(prev);
-      next.has(idx) ? next.delete(idx) : next.add(idx);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   }
 
   function playChord() {
-    const indices = [...chordNoteSet];
-    if (!indices.length) return;
-    const notes = indices.sort((a, b) => a - b).map(i => `${CHROMATIC[i]}${START_OCTAVE + 1}`);
-    playNotes(notes, '2n', instrument);
+    if (!voicedNotes.length) return;
+    playNotes(voicedNotes, '2n', instrument);
   }
 
   function playScale() {
@@ -120,18 +164,18 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
   }
 
   function playManual() {
-    const indices = [...manualHighlight];
-    if (!indices.length) return;
-    const notes = indices.sort((a, b) => a - b).map(i => `${CHROMATIC[i]}${START_OCTAVE + 1}`);
+    if (!manualHighlight.size) return;
+    const notes = [...manualHighlight].sort();
     playNotes(notes, '2n', instrument);
   }
 
-  const detectedChord = manualHighlight.size >= 2 ? identifyChord([...manualHighlight]) : null;
+  // Detect chord from manual highlights (pitch-class level, strip octave)
+  const manualPitchClasses = [...manualHighlight].map(id => noteIndex(id.replace(/\d+$/, '')));
+  const detectedChord = manualPitchClasses.length >= 2 ? identifyChord(manualPitchClasses) : null;
   const hasScale = scaleNoteSet.size > 0;
 
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
-      {/* Controls — no mode toggle, always multi-layer */}
       <div className={styles.controls}>
         <div className={styles.legend}>
           <span className={styles.legendDot}>A</span>
@@ -157,6 +201,18 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
           {detectedChord && (
             <span className={styles.detectedChord}>→ {detectedChord.label}</span>
           )}
+          {/* Inversion picker — only when a chord is selected and callback provided */}
+          {selectedChord && onPickInversion && (
+            <button
+              className={pickingInversion ? styles.invBtnActive : styles.invBtn}
+              onClick={() => setPickingInversion(p => !p)}
+            >
+              {pickingInversion ? '✕ Cancel' : 'Choose inversion'}
+            </button>
+          )}
+          {pickingInversion && (
+            <span className={styles.invHint}>Click the note you want as the bass note</span>
+          )}
         </div>
       </div>
 
@@ -164,12 +220,17 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
         {/* White keys */}
         {WHITE_KEYS.map(({ note, octave, wIdx }) => {
           const nIdx = noteIndex(note);
+          const id   = keyId(note, octave);
+          const isChordNote = chordNoteSet.has(nIdx);
           const layers = {
-            playing:   playbackNoteSet.has(nIdx),
-            highlight: chordNoteSet.has(nIdx) || manualHighlight.has(nIdx),
-            scale:     scaleNoteSet.has(nIdx),
+            playing:      playbackNoteSet.has(nIdx),
+            highlight:    isChordNote || manualHighlight.has(id),
+            invCandidate: pickingInversion && isChordNote,
+            invFirst:     pickingInversion && isChordNote &&
+                          chordNoteNames[0] && noteIndex(chordNoteNames[selectedChord?.inversion ?? 0]) === nIdx,
+            scale:        scaleNoteSet.has(nIdx),
           };
-          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.highlight;
+          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.highlight && !layers.invCandidate;
           return (
             <div
               key={`w-${note}${octave}`}
@@ -192,12 +253,17 @@ export function PianoKeyboard({ scaleRoot, scaleKey, selectedChord, instrument =
         {/* Black keys */}
         {BLACK_POSITIONS.map(({ sharp, octave, afterWIdx }) => {
           const nIdx = noteIndex(sharp);
+          const id   = keyId(sharp, octave);
+          const isChordNote = chordNoteSet.has(nIdx);
           const layers = {
-            playing:   playbackNoteSet.has(nIdx),
-            highlight: chordNoteSet.has(nIdx) || manualHighlight.has(nIdx),
-            scale:     scaleNoteSet.has(nIdx),
+            playing:      playbackNoteSet.has(nIdx),
+            highlight:    isChordNote || manualHighlight.has(id),
+            invCandidate: pickingInversion && isChordNote,
+            invFirst:     pickingInversion && isChordNote &&
+                          chordNoteNames[0] && noteIndex(chordNoteNames[selectedChord?.inversion ?? 0]) === nIdx,
+            scale:        scaleNoteSet.has(nIdx),
           };
-          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.highlight;
+          const dimmed = hasScale && !layers.scale && !layers.playing && !layers.highlight && !layers.invCandidate;
           const displayName = blackKeyDisplayName(sharp, scaleRoot, scaleKey, scaleNotes);
           const left = (afterWIdx + 1) * whiteW - blackW / 2;
           return (

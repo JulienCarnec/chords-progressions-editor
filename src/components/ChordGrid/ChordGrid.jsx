@@ -180,6 +180,17 @@ export function ChordGrid() {
           instrument={instrument}
           playbackNotes={pianoPlaybackNotes}
           resetKey={selectedCellIndex}
+          onPickInversion={selectedCellIndex !== null ? (invIdx) => {
+            const cell = prog.cells[selectedCellIndex];
+            if (!cell?.chord) return;
+            dispatch({
+              type: 'SET_CELL_CHORD',
+              progressionId: prog.id,
+              cellIndex: selectedCellIndex,
+              chord: { ...cell.chord, inversion: invIdx },
+            });
+            dispatch({ type: 'SET_SELECTED_CELL_CHORD', chord: { ...cell.chord, inversion: invIdx } });
+          } : undefined}
         />
       </div>
     </div>

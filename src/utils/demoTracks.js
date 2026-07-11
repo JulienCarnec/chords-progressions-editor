@@ -63,7 +63,7 @@ function makeBachTrack() {
     cell(`${p1id}-5`, 'D', 'min9'),
     cell(`${p1id}-6`, 'G', 'dom7'),
     cell(`${p1id}-7`, 'C', 'maj'),
-  ], 'C', 'ionian', 'whole', '{a0,c0,a1,b1,c1,a1,b1,[c1,d1]}', '8n', true);
+  ], 'C', 'ionian', 'whole', 'builtin-prelude-arp', '8n', true);
 
   const development = prog(p2id, 'Development', [
     cell(`${p2id}-0`, 'A', 'min7'),
@@ -74,7 +74,7 @@ function makeBachTrack() {
     splitCell(`${p2id}-5`, 'A', 'min', 'E', 'dom7'),
     cell(`${p2id}-6`, 'F', 'maj'),
     cell(`${p2id}-7`, 'F', 'min'),
-  ], 'C', 'ionian', 'whole', '{a0,c0,a1,b1,c1,a1,b1,[c1,d1]}', '8n', true);
+  ], 'C', 'ionian', 'whole', 'builtin-prelude-arp', '8n', true);
 
   const cadence = prog(p3id, 'Cadence', [
     cell(`${p3id}-0`, 'C', 'maj'),
@@ -85,7 +85,7 @@ function makeBachTrack() {
     cell(`${p3id}-5`, 'D', 'min'),
     cell(`${p3id}-6`, 'G', 'dom7'),
     cell(`${p3id}-7`, 'C', 'maj'),
-  ], 'C', 'ionian', 'whole', '{a0,c0,a1,b1,c1,a1,b1,[c1,d1]}', '8n', true);
+  ], 'C', 'ionian', 'whole', 'builtin-prelude-arp', '8n', true);
 
   return {
     trackName: 'Bach — Prelude No. 1 in C Major',
@@ -127,7 +127,7 @@ function makeHallelujahTrack() {
     cell(`${p1id}-5`, 'G', 'maj'),
     cell(`${p1id}-6`, 'C', 'maj'),
     cell(`${p1id}-7`, 'G', 'maj'),
-  ], 'C', 'ionian', 'whole', '{[a0,c0],a1,b1,[c1,d1],b1,c1}', '8n', false);
+  ], 'C', 'ionian', 'whole', 'builtin-buckley', '8n', false);
 
   const chorus = prog(p2id, 'Chorus', [
     cell(`${p2id}-0`, 'F', 'maj'),
@@ -138,7 +138,7 @@ function makeHallelujahTrack() {
     cell(`${p2id}-5`, 'A', 'min'),
     cell(`${p2id}-6`, 'G', 'maj'),
     cell(`${p2id}-7`, 'C', 'maj'),
-  ], 'C', 'ionian', 'whole', '{[a0,c0],a1,b1,[c1,d1],b1,c1}', '8n', false);
+  ], 'C', 'ionian', 'whole', 'builtin-buckley', '8n', false);
 
   return {
     trackName: 'Hallelujah — Leonard Cohen',
@@ -187,7 +187,7 @@ function makeBluesTrack() {
     cell(`${p1id}-9`,  'D', 'dom7'),
     cell(`${p1id}-10`, 'A', 'dom7'),
     splitCell(`${p1id}-11`, 'A', 'dom7', 'E', 'dom7'),
-  ], 'A', 'blues', 'whole', '{[a0,c0],a1,[b1,c1,d1,e1],a1}', '8n', true);
+  ], 'A', 'blues', 'whole', 'builtin-block', '4n', true);
 
   return {
     trackName: 'Blues Shuffle in A',
@@ -371,7 +371,7 @@ function makeMistyTrack() {
     cell(`${p1id}-5`, 'C#', 'dom7',  0, OCT),
     splitCell(`${p1id}-6`, 'F', 'min7', 'A#', 'dom7', 0, 0, OCT),
     splitCell(`${p1id}-7`, 'D#', 'maj7', 'C#', 'dom7', 0, 0, OCT),
-  ], 'D#', 'ionian', 'whole', '{a0,[b1,c1,d1,e1],a1,c1,a1,[b1,c1,d1,e1]}', '8n', null);
+  ], 'D#', 'ionian', 'whole', 'builtin-buckley', '8n', null);
 
   // B section (bridge) — bars 17-24
   const sectionB = prog(p2id, 'B section (Bridge)', [
@@ -383,7 +383,7 @@ function makeMistyTrack() {
     cell(`${p2id}-5`, 'G#', 'maj7',  0, OCT),
     splitCell(`${p2id}-6`, 'C', 'min7', 'F', 'dom7', 0, 0, OCT),
     splitCell(`${p2id}-7`, 'A#', 'maj7', 'G', 'dom7', 0, 0, OCT),
-  ], 'D#', 'ionian', 'half', '{a0,[b1,c1,d1,e1],a1,c1,a1,[b1,c1,d1,e1]}', '8n', null);
+  ], 'D#', 'ionian', 'half', 'builtin-buckley', '8n', null);
 
   // A' section — bars 25-32 (final A, ending on tonic)
   const sectionAprime = prog(p3id, "A' section", [
@@ -395,7 +395,7 @@ function makeMistyTrack() {
     cell(`${p3id}-5`, 'C#', 'dom7',  0, OCT),
     splitCell(`${p3id}-6`, 'F', 'min7', 'A#', 'dom7', 0, 0, OCT),
     cell(`${p3id}-7`, 'D#', 'maj7',  0, OCT),
-  ], 'D#', 'ionian', 'whole', '{a0,[b1,c1,d1,e1],a1,c1,a1,[b1,c1,d1,e1]}', '8n', null);
+  ], 'D#', 'ionian', 'whole', 'builtin-buckley', '8n', null);
 
   return {
     trackName: 'Misty — Erroll Garner',
@@ -437,9 +437,9 @@ function makePachelbelTrack() {
     cell(`${p1id}-5`, 'D',  'maj'),
     cell(`${p1id}-6`, 'G',  'maj'),
     cell(`${p1id}-7`, 'A',  'maj'),
-  ], 'D', 'ionian', 'whole', '{a1,b1,c1,b1}', '8n', true);
+  ], 'D', 'ionian', 'whole', 'builtin-arp-3notes', '8n', true);
 
-  // Build — same chords but with 4-note arpeggios for the later variations
+  // Build — same chords but with 2-octave arpeggios for the later variations
   const build = prog(p2id, 'Variation', [
     cell(`${p2id}-0`, 'D',  'maj'),
     cell(`${p2id}-1`, 'A',  'maj'),
@@ -449,7 +449,7 @@ function makePachelbelTrack() {
     cell(`${p2id}-5`, 'D',  'maj'),
     cell(`${p2id}-6`, 'G',  'maj'),
     cell(`${p2id}-7`, 'A',  'maj'),
-  ], 'D', 'ionian', 'whole', '{a0,a1,b1,c1,a2,c1,b1,a1}', '8n', true);
+  ], 'D', 'ionian', 'whole', 'builtin-arp-up-2oct', '8n', true);
 
   return {
     trackName: 'Canon in D — Pachelbel',

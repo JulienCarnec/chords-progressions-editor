@@ -78,6 +78,18 @@
 }
 .editPatternBtn:hover { background: #e5e7eb; }
 
+.viewPatternBtn {
+  padding: 3px 10px;
+  border: 1px solid #1d4ed8;
+  border-radius: 5px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.viewPatternBtn:hover { background: #dbeafe; }
+
 .miniLoopLabel {
   display: flex;
   align-items: center;

@@ -6,6 +6,7 @@ import { useSampler } from '../../audio/useSampler';
 import { Knob } from '../Playback/Knob';
 import { saveProject } from '../../utils/persistence';
 import { exportMidi } from '../../utils/midiExport';
+import { exportPdf } from '../../utils/pdfExport';
 import { DEMO_TRACKS } from '../../utils/demoTracks';
 import { useT, useLocale } from '../../i18n/index';
 import styles from './TopBar.module.css';
@@ -361,6 +362,7 @@ export function TopBar({ onLoad }) {
         }}>💾</button>
         <button className={styles.actionBtn} title={t.loadTitle} onClick={() => fileRef.current.click()}>📂</button>
         <button className={styles.actionBtn} title={t.exportMidiTitle} onClick={() => exportMidi(state)}>🎼</button>
+        <button className={styles.actionBtn} title={t.exportPdfTitle} onClick={() => exportPdf(state)}>📄</button>
         <input
           ref={fileRef}
           type="file"

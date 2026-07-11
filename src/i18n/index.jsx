@@ -37,6 +37,7 @@ const en = {
   saveTitle:          'Save project to file',
   loadTitle:          'Load project from file',
   exportMidiTitle:    'Export as MIDI file',
+  exportPdfTitle:     'Export track sheet as PDF',
   timeSigTitle:       'Time signature',
   instrumentTitle:    'Select instrument',
 
@@ -374,6 +375,7 @@ const fr = {
   saveTitle:          'Enregistrer le projet dans un fichier',
   loadTitle:          'Charger un projet depuis un fichier',
   exportMidiTitle:    'Exporter en fichier MIDI',
+  exportPdfTitle:     'Exporter la fiche en PDF',
   timeSigTitle:       'Signature rythmique',
   instrumentTitle:    'Choisir un instrument',
 

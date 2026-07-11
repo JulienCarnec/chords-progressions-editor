@@ -556,6 +556,28 @@ export function TopBar({ onLoad }) {
         </div>
       )}
 
+      {/* Reset confirmation dialog */}
+      {resetConfirm && (
+        <div className={styles.demoOverlay} role="dialog" aria-modal="true" aria-labelledby="reset-confirm-title">
+          <div className={styles.demoDialog}>
+            <p id="reset-confirm-title" className={styles.demoDialogTitle}>{t.resetConfirmTitle}</p>
+            <p className={styles.demoDialogMsg}>{t.resetConfirmMsg}</p>
+            <div className={styles.demoDialogActions}>
+              <button className={styles.demoDialogCancel} onClick={() => setResetConfirm(false)}>
+                {t.cancelBtn}
+              </button>
+              <button className={styles.resetDialogOk} onClick={() => {
+                stop();
+                dispatch({ type: 'RESET_PROJECT' });
+                setResetConfirm(false);
+              }}>
+                {t.resetConfirmOk}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirmation dialog for loading a demo over an existing project */}
       {pendingDemo && (
         <div className={styles.demoOverlay} role="dialog" aria-modal="true" aria-labelledby="demo-confirm-title">

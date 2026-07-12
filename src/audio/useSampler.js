@@ -31,9 +31,13 @@ const INSTRUMENT_CONFIGS = {
     },
     baseUrl: 'https://tonejs.github.io/audio/salamander/',
   },
-  epiano: {
+  rhodes: {
     urls: SPARSE_NOTES,
     baseUrl: `${MUSYNGKITE}electric_piano_1-mp3/`,
+  },
+  wurlitzer: {
+    urls: SPARSE_NOTES,
+    baseUrl: `${MUSYNGKITE}electric_piano_2-mp3/`,
   },
   harpsichord: {
     urls: SPARSE_NOTES,

@@ -92,7 +92,7 @@ export function TopBar({ onLoad }) {
   const inProgEditor = activeView === 'progression';
 
   function adjustBpm(delta) {
-    const next = Math.min(300, Math.max(20, bpm + delta));
+    const next = Math.min(3000, Math.max(0, bpm + delta));
     dispatch({ type: 'SET_BPM', bpm: next });
     if (isPlaying || isPaused) Tone.getTransport().bpm.value = next;
   }
